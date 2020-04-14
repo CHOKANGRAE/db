@@ -1,0 +1,166 @@
+
+(function ($) {
+
+	var self = {};
+
+
+	self.init = function ($wrapper, config) {
+		
+		if($wrapper.data('accordion')) {
+			console.log('return');
+			return;
+		}
+		
+		$wrapper.find("button").attr("type","button").attr("title","펼치기");
+
+		config = $.extend(true, {
+			autoScroll: true,
+			closeBtn: '.btnSm_close > .press-button'
+		}, config || {});
+
+
+		$wrapper.off('click.accordion').on('click.accordion', ' > .press-accordion-item > .press-accordion-title, ' + config.closeBtn, function (e) {
+
+
+
+			var $item = $(this).children().eq(1).closest('.press-accordion-item'), item = $item[0];
+			
+
+			if ($item.hasClass('active')) {
+
+				$item.find('.press-accordion-contents').slideUp(300, function(){
+					$item.removeClass('active').find('.press-accordion-toggle-btn').attr('title','펼치기');
+				});
+				$item.removeClass('active').find('.press-accordion-toggle-btn').attr('title','펼치기');
+				
+
+			} else {
+				$(this).parent().parent().children().find('.press-accordion-contents').slideUp(300);
+				$(this).parent().parent().children().removeClass("active").find('.press-accordion-toggle-btn').attr('title','펼치기');
+				
+				/*var windowHeight = $(window).outerHeight();
+				$item.find('.press-accordion-contents').slideDown(300, function(){
+					$item.addClass('active').find('.press-accordion-toggle-btn').attr('title','접기');
+					if(config.autoScroll) {
+						var body = $('body')[0];
+
+						var currentTop = body.scrollTop;
+
+						var parentHeight = windowHeight + currentTop;
+						var itemHeight = $item.outerHeight();
+						var $title = $item.find('.press-accordion-title');
+						var titleTop = $title.outerHeight() + $title.offset().top;
+
+
+						if(titleTop + itemHeight > parentHeight) {
+							var diff = titleTop + itemHeight - parentHeight;
+							body.scrollTop = body.scrollTop + diff;
+						}
+					}
+					window.scroll(0,$(this).offset().top-120);
+				});*/
+				$item.find('.press-accordion-contents').slideDown(300, function(){
+					if(config.autoScroll) {
+						var $diff = 87;
+						if($('html').hasClass('mobile')) $diff = 60;
+						var $scrollTop = $(window).scrollTop();
+						var $windowHeight = $(window).height();
+						var $windowEnd = $windowHeight + $scrollTop;
+						var $itemHeight = $item.outerHeight();
+						var $itemTop = $item.offset().top;
+						var $itemEnd = $itemTop+$itemHeight;
+						var $nextMgTop = 0;
+						var $scl = null;
+						var $sclSpeed = 200;
+						if($item.next().length)$nextMgTop = parseInt($item.next().css('margin-top'));
+						if($windowEnd < $itemEnd){
+							$scl = Math.min($itemTop-$diff,$itemEnd-$windowHeight+$nextMgTop);
+						}else if($itemTop < $scrollTop){
+							$scl = $itemTop-$diff;
+						}
+						if($scl != null){
+							$('html,body').stop(true,false).animate({'scrollTop':$scl},$sclSpeed);
+						}
+					}
+				});
+				$item.addClass('active').find('.press-accordion-toggle-btn').attr('title','접기');
+				
+				
+			}
+		});
+
+
+		var obj = {
+			add : function() {
+				return add.apply($wrapper);
+			},
+
+			remove : function(index) {
+				remove.apply($wrapper, [index]);
+			}
+		};
+
+		$('.press-accordion-title').find('.wpc-text > p').each(function(index,item){
+			if($(item).html() == "Q"){
+				$(item).append("<span class='offscreen'>질문</span>");
+			}
+		});
+		$('.press-accordion-contents').find('.wpc-text > p > span').each(function(index,item){
+			if($(item).html() == "A"){
+				$(item).append("<span class='offscreen'>답변</span>");
+			}
+		});
+		
+		$wrapper.data('accordion', obj);
+		
+		$('.press-accordion-title').find('.wpc-text')
+
+		return obj;
+
+	};
+
+	function remove(index) {
+
+		var $target = index === undefined ?
+			this.find('.press-accordion-item') :
+			this.find('.press-accordion-item').eq(index);
+
+		$target.remove();
+
+	}
+
+	function add() {
+
+		var itemHTML = '';
+
+		var uuid = 'acc_' + parseInt(Math.random() * 100000000);
+
+		itemHTML += '<li class="press-accordion-item" data-id="' + uuid + '">';
+		itemHTML += '<div class="press-accordion-title press-accordion-inner-box">';
+		itemHTML += '<div class="press-layout-section press-flex-section"></div>';
+		itemHTML += '<button type="button" class="press-accordion-toggle-btn" title="펼치기"><i></i></button>';
+
+		itemHTML += '</div>';
+		itemHTML += '<div class="press-accordion-contents press-accordion-inner-box">';
+		itemHTML += '<div class="press-layout-section press-flex-section"></div>';
+		itemHTML += '</div>';
+		itemHTML += '</li>';
+
+		var $item = $(itemHTML);
+
+		this.append($item);
+
+		return $item;
+
+	}
+
+
+	if (typeof window.webponent == 'undefined') {
+		window.webponent = {};
+	}
+
+	window.webponent.accordion = self;
+
+
+})(jQuery);
+

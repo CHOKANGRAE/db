@@ -1,0 +1,4688 @@
+/**
+ * 2018 사이버이메지네이션
+ *
+ * webponent press 코어라이브러리 V2.0.0 (18.04)
+ *
+ * 페이지를 구동시키기 위한 라이브러리
+ *
+ * @author 오상원 (ohsangwon@cyber-i.com)
+ * @author 정태승 (jungts@cyber-i.com)
+ *
+ */
+var dialogHeight;
+(function ($) {
+    "use strict";
+    
+    var self = {};
+
+    if (!window.webponent){
+        window.webponent = {};
+    }
+
+    if (!window.webponent.press) {
+        window.webponent.press = {};
+    }
+
+    if (!window.webponent.press.event) {
+        window.webponent.press.event = $({});
+    }
+
+    /**
+     * 프레스 버전정보.
+     * Version up 될 때마다 변경해야 한다!
+     * @type {string}
+     */
+    webponent.press.version = '2.0.0';
+    webponent.press.buildVersion = '2.0.0';
+
+    var badBrowser = false;
+    if(navigator.appName.indexOf("Internet Explorer") !== -1){
+
+        badBrowser=(
+            navigator.appVersion.indexOf("MSIE 9") === -1 &&
+            navigator.appVersion.indexOf("MSIE 1") === -1
+        );
+    }
+
+    // phantomJS여부 PDF 용으로 runtime.js를 불러왔을때 true 로 변경함.
+    var isPhantom = false;
+    if(navigator.userAgent.indexOf("PhantomJS") !== -1) {
+        isPhantom = true;
+    }
+
+    var	PRESS_HOME = '/WEB-APP/webponent-press1.0';
+
+    var pageMarkup = null;
+    var pageSetting = null;
+    var pageScript = null;
+
+    webponent.press.components ={};
+
+    var dataEventList = {};
+
+
+    /**
+     * 페이지나 표에서 사용하는 데이터 맵
+     * 데이터를 수납하고 있다.
+     *
+     * @type {Object}
+     * @example
+     * {
+	 *   page:https://dl.dropboxusercontent.com/u/361521190/data/amount-map.json : Array[20],
+	 *   form:https://dl.dropboxusercontent.com/u/361521190/data/amount-map.json : Object
+	 * }
+     */
+    var registeredData = {};
+
+    var FORM_SUBMIT_EVENT_NAME = 'formSubmit';
+
+    self.FORMSUBMIT = FORM_SUBMIT_EVENT_NAME;
+
+
+    /**
+     * 런타임상에서 사용하는 변수 매핑
+     * @type {Object}
+     */
+    var variables = {};
+
+    variables.$today = function () {
+
+        var today = new Date();
+        var dd = today.getDate();
+        var mm = today.getMonth() + 1;
+
+        var yyyy = today.getFullYear() + '';
+
+        if (dd < 10) {
+
+            dd = '0' + dd;
+        }
+
+        if (mm < 10) {
+
+            mm = '0' + mm;
+        }
+
+        var todayString = yyyy + mm + dd;
+
+        return todayString;
+    };
+    
+    
+    /**
+     * DB금융그룹 레이어팝업 클래스
+     * @type {Object}
+     */
+    var Dialog_cms ={
+		focusClass:'dialog_focused',
+		open:function(tar){
+			var $select_id = $(tar),
+				$body = $('body');
+//			$body.addClass('no_scroll');
+			if($('body').hasScrollBar()){ //스크롤유무 체크
+				BodyPc.lock();
+			}
+			
+			//원래 포커스에 클래스 부여
+			var $focus = $(':focus');
+			if($focus.length){
+				$($focus).addClass(Dialog_cms.focusClass);
+			}
+
+			//열기
+			$select_id.attr({'aria-hidden':'false','tabindex':'0'}).fadeIn(100).addClass('show').focus();
+			$select_id.on('blur', function(){ $(this).removeAttr('tabindex'); });
+			
+			//슬릭 있을때
+			if($(tar).find('.terms_slide').length > 0){
+				$(tar).find('.terms_slide').slick('setOption', 'refresh', '', true);
+				$(tar).find('.terms_slide').slick('slickGoTo',0);
+			}
+
+			//스크롤
+			dialogHeight = function(){
+				var fullHeight = $(window).outerHeight() - $select_id.find('.dialog_header').outerHeight() - $select_id.find('.dialog_footer').outerHeight() - 200,
+					$dialogContent = $select_id.find('.dialog_content_scroller'), contentHeight = $dialogContent.find('.mCSB_container').outerHeight(),
+					$dialogContentHeight = $select_id.find('.dialog_content_scroller[style*="height"]');
+				if(fullHeight < contentHeight){
+					$dialogContent.css('height',fullHeight);
+					$dialogContent.removeClass('no_scroll');
+				} else {
+					$dialogContent.css('height','auto');
+					$dialogContent.addClass('no_scroll');
+				}
+			};
+			dialogHeight();
+			//팝업 안에서만 포커스 이동
+			Dialog_cms.focusMove(tar);
+		},
+		focusMove:function(tar){
+			if(!$(tar).is(':visible'))return;
+			var $focusEl = 'a[href], area[href], input:not([disabled]), input:not([readonly]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, *[tabindex=0]';
+			var $focusable = $(tar).find($focusEl);
+			var $focusLength = $focusable.length;
+			$focusable.first().on('keydown',function(e){
+				var $keyCode = (e.keyCode?e.keyCode:e.which);
+				if($keyCode == 9){
+					if(e.shiftKey){
+						$focusable.eq($focusLength-1).focus();
+						e.preventDefault();
+					};
+				};
+			});
+			$focusable.last().on('keydown',function(e){
+				var $keyCode = (e.keyCode?e.keyCode:e.which);
+				if ($keyCode == 9){
+					if(e.shiftKey){
+						//console.log('back focus')
+						//$focusable.eq($focusLength-1).focus();
+						//e.stopPropagation();
+					} else{
+						$focusable.eq(0).focus();
+						e.preventDefault();
+					};
+				};
+			});
+		},
+		close:function(tar){
+			
+			//포커스 되돌려주기
+			var $body = $('body'),
+				$focusLength = $('.'+Dialog_cms.focusClass).length;
+			if($focusLength){
+				$('.'+Dialog_cms.focusClass).focus();
+				setTimeout(function(){
+					$('.'+Dialog_cms.focusClass).removeClass(Dialog_cms.focusClass);
+				},50);
+			}
+			//닫기
+//			$body.removeClass('no_scroll');
+			BodyPc.unlock();
+			$(tar).attr('aria-hidden','true').removeClass('show').fadeOut(300);
+			setTimeout(function(){
+				$(tar).remove();
+			},500);
+			
+		},
+		init:function(){
+			$('.dialog').attr({'aria-hidden':'true','aria-live':'polit','tabindex':-1});
+			//열기
+			$(document).on('click','.dialog_open',function(e){
+				e.preventDefault();
+				var $pop = $(this).attr('href');
+				Dialog_cms.open($pop);
+			});
+
+			$(document).on('click', '.dialog_close.case_cms',function(e){
+				
+				e.preventDefault();
+				var $pop = $(this).attr('href');
+				if ($pop == '#' || $pop == '#none' || $pop == undefined)$pop = $(this).closest('.dialog');
+				Dialog_cms.close($pop);
+			});
+		}
+	};
+    
+	var Dialog_cms_mo = {
+		id:'uiDialog',
+		focusClass:'dialog_focused',
+		headClass:'dialog_header',
+        contClass:'dialog_content',
+        etcCont:'#skipNavi,#header,#container,#floatingNavi,#footer',
+		open:function(tar,callback){
+			if(!$(tar).length || !$(tar).children('.dialog_wrap').length) return console.log('해당팝업없음');
+			var $idx = $(tar).index('.dialog'),
+				$show = $('.dialog.show').length,
+				$id = $(tar).attr('id'),
+				$lastCloseBtn = '<a href="#" class="dialog_close last_focus ui_dialog_close_cms"><span class="offscreen">팝업창 닫기</span></a>';
+			if($show > 0)$(tar).css('z-index','+='+$show);
+            if($id == undefined){
+				$id = Dialog_cms_mo.id+$idx;
+				$(tar).attr('id',$id);
+            }
+
+            //열릴때 플루팅 버튼
+            if($('html').hasClass('isApp') && !$('#floatingNav').hasClass('off')){
+                $(tar).addClass('is_floating');
+            }else{
+                $(tar).removeClass('is_floating');
+            }
+
+            var $focusEl = '';
+            try{
+                if(event.currentTarget != document){
+                    $focusEl = $(event.currentTarget);
+                }else{
+                    $focusEl = $(document.activeElement);	
+                }
+            }catch(error){
+                $focusEl = $(document.activeElement);
+            }
+            $(tar).data('returnFocus',$focusEl);
+            $focusEl.addClass(Dialog_cms_mo.focusClass);
+            if($focusEl.closest('.dialog').length){
+                var $lastPop = $focusEl.closest('.dialog'),
+                    $lastPopId = $lastPop.attr('id');
+                $(tar).data('lastpop',$lastPopId);
+                $lastPop.attr('aria-hidden',true);
+            }
+
+            var $openDelay = 10;
+            if($(tar).data('ishtml') != true && isMobile.iOS())$openDelay = 300;
+            setTimeout(function(){
+                //리턴 포커스
+                if(isMobile.iOS()){
+                    var $focusEl2 = $(document.activeElement);
+                    if(!$focusEl2.hasClass(Dialog_cms_mo.focusClass)){
+                        $focusEl.removeClass(Dialog_cms_mo.focusClass);
+                        $(tar).data('returnFocus',$focusEl2);
+                        $focusEl2.addClass(Dialog_cms_mo.focusClass);
+                    }
+                }
+
+                $(tar).attr({'tabindex':0}).focus();
+
+                //웹접근성
+                $(Dialog_cms_mo.etcCont).attr('aria-hidden','true');
+                $(tar).attr('aria-hidden','false');
+                var $tit = $(tar).find('.'+Dialog_cms_mo.headClass+' h2');
+                if($tit.length && $(tar).attr('aria-labelledby') == undefined){
+                    if($tit.attr('id') == undefined){
+                        $tit.attr('id',$id+'Label');
+                        $(tar).attr('aria-labelledby', $id+'Label');
+                    }else{
+                        $(tar).attr('aria-labelledby', $tit.attr('id'));
+                    }
+                }
+                
+                //열기
+                if(!$('html').hasClass('lock'))BodyMo.lock();
+                $(tar).addClass('show');
+                $(tar).find('.'+Dialog_cms_mo.contClass).scrollTop(0);
+
+				//슬릭 있을때
+				if($(tar).find('.guide_info_swipe').length){
+					//$(tar).find('.guide_info_swipe').slick('resize');
+					//$(tar).find('.guide_info_swipe').slick('setOption', 'refresh', '', true);
+					$(tar).find('.guide_info_swipe').slick('refresh');
+					$(tar).find('.guide_info_swipe').slick('slickGoTo',0);
+                }
+
+                //스크롤 테이블이 있을때
+                if($(tar).find('.biz_tbl_scroll_all').length){
+                    tblUI.guideScl(tar+' .biz_tbl_scroll_all');
+			        tblUI.guide(tar+' .biz_tbl_scroll_all');
+                }
+
+				Dialog_cms_mo.focusMove(tar);
+				if(!!callback){
+					callback();
+				}
+				Dialog_cms_mo.position(tar);
+				$(window).resize();
+			},$openDelay);
+
+			//모바일 접근성보완: 모바일일때 마지막에 닫기 버튼 추가
+			if(isMobile.any() && !$(tar).find('.dialog_close.last_focus').length && $(tar).find('.dialog_close').length)$(tar).children('.dialog_wrap').append($lastCloseBtn);
+		},
+		close:function(tar,callback){
+//			if(!$(tar).hasClass('show')) return console.log('해당팝업 안열려있음');
+            var $closeDelay = 700,
+                $visible = $('.dialog.show').length,
+				$id = $(tar).attr('id'),
+                $lastPopId = $(tar).data('lastpop');
+            if($visible == 1){
+                BodyMo.unlock();
+                $(Dialog_cms_mo.etcCont).removeAttr('aria-hidden');
+            }
+            if($lastPopId != undefined){
+                $('#'+$lastPopId).attr('aria-hidden',false);
+            };
+
+			//포커스 되돌려주기
+			var $returnFocus = $(tar).data('returnFocus');
+            var $stepSection = $returnFocus.closest('.step_section');
+            $returnFocus.removeClass(Dialog_cms_mo.focusClass);
+            if($stepSection.length){
+                //포커스되돌려 줫는데 slick의 비활성영역일때 활성영역으로 포커스
+                if(!$stepSection.hasClass('slick-active')){
+                    $stepSection.siblings('.slick-active').focus();
+                }else{
+                    $returnFocus.focus();
+                }
+            }else{
+                $returnFocus.focus();
+            }
+        
+			//닫기
+			$(tar).removeClass('show');
+            $(tar).attr('aria-hidden','true').removeAttr('style tabindex');
+
+            $(tar).find('.'+Dialog_cms_mo.headClass).removeAttr('style').removeClass('shadow');
+            $(tar).find('.'+Dialog_cms_mo.contClass).removeAttr('tabindex style');
+            if($(tar).find('.dialog_close.last_focus').length)$(tar).find('.dialog_close.last_focus').remove();
+
+            if(!!callback){
+                callback();
+            }
+
+            if($(tar).hasClass("use_biz")){
+                setTimeout(function(){
+                    $(tar).remove();
+                },$closeDelay);
+            }
+		},
+		position:function(tar){
+			var $head = $(tar).find('.'+Dialog_cms_mo.headClass),
+				$tit = $head.find('h2'),
+				$content = $(tar).find('.'+Dialog_cms_mo.contClass);
+
+			if(!$(tar).is(':visible'))return false;
+			$(window).resize(function(){
+				$head.removeAttr('style').removeClass('shadow');
+				$content.removeAttr('tabindex style');
+
+				//타이틀이 두줄 이상이 될때
+				var $headH = $head.outerHeight(),
+					$titH = $tit.outerHeight();
+				if(30 < $titH && $headH < $titH && !$head.hasClass('offscreen')){
+					var $cabH = $titH-$headH;
+					$head.css('height','+='+$cabH);
+					$(tar).find('.'+Dialog_cms_mo.contClass).css('padding-top','+='+$cabH);
+				}
+
+				//컨텐츠 스크롤이 필요할때
+				var $height = $(tar).height(),
+					$popHeight = $(tar).find('.dialog_wrap').outerHeight();
+				// if($height < $popHeight){
+				// 	$content.attr('tabindex',0);
+					if(!$(tar).hasClass('full'))$content.css('max-height',$height);
+				// }
+
+				//팝업 헤더 shadow
+				var $contScrollTop = $content.scrollTop();
+				if($contScrollTop > 50){
+					$head.addClass('shadow');
+				}else{
+					$head.removeClass('shadow');
+				}
+			});
+
+			//팝업 헤더 shadow
+			$content.scroll(function(){
+				var $contScrollTop = $(this).scrollTop();
+				if($contScrollTop > 50){
+					$head.addClass('shadow');
+				}else{
+					$head.removeClass('shadow');
+				}
+			});
+		},
+		focusMove:function(tar){
+			if(!$(tar).is(':visible'))return;
+			var $tar = $(tar),
+				$focusaEl = '[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex]:not([tabindex="-1"])',
+				$focusaEls = $tar.find($focusaEl);
+
+			$focusaEls.on('keydown',function(e){
+				var $keyCode = (e.keyCode?e.keyCode:e.which),
+					$focusable = $tar.find(':focusable').not('.last_focus'),
+					$focusLength = $focusable.length,
+					$firstFocus = $focusable.first(),
+					$lastFocus = $focusable.last(),
+					$index = $focusable.index(this);
+				if($index == ($focusLength-1)){ //last
+					if ($keyCode == 9){
+						if(!e.shiftKey){
+							$firstFocus.focus();
+							e.preventDefault();
+						};
+					};
+				}else if($index == 0){	//first
+					if($keyCode == 9){
+						if(e.shiftKey){
+							$lastFocus.focus();
+							e.preventDefault();
+						};
+					};
+				}
+			});
+			$tar.on('keydown',function(e){
+				var $keyCode = (e.keyCode?e.keyCode:e.which),
+					$focusable = $tar.find(':focusable').not('.last_focus'),
+					$lastFocus = $focusable.last();
+				
+				if(e.target == this && $keyCode == 9){
+					if(e.shiftKey){
+						$lastFocus.focus();
+						e.preventDefault();
+					};
+				}
+			});
+	
+			$(document).on('focusin', $tar.selector+' .last_focus',function(e){
+				var $focusable = $tar.find(':focusable').not('.last_focus'),
+                    $firstFocus = $focusable.first(),
+                    $lastFocus = $focusable.last();
+                if($isFirstBackTab){
+                    $lastFocus.focus();
+                }else{
+                    $firstFocus.focus();
+                }
+			});
+		},
+		init:function(){
+			//열기
+			$(document).on('click','.ui_dialog_open_cms',function(e){
+				e.preventDefault();
+				var $pop = $(this).attr('href'),
+                    $currentTarget = $(e.currentTarget);
+                Dialog_cms_mo.open($pop,function(){
+                    $($pop).data('returnFocus',$currentTarget);
+                });
+			});
+
+			$(document).on('click', '.ui_dialog_close_cms, .dialog_close.case_cms.dialog_mo',function(e){
+				e.preventDefault();
+				var $pop = $(this).attr('href');
+				if($(this).hasClass('case_cms')){
+					$pop = $(this).closest('.dialog');
+				}else{
+					if ($pop == '#' || $pop == '#none' || $pop == undefined)$pop = $(this).closest('.dialog');
+				}
+				Dialog_cms_mo.close($pop);
+			});
+		}
+	};
+    
+  //body scroll lock
+    var BodyMo = {
+    	scrollTop :'',
+    	lock: function(){
+    		if(!$('html').hasClass('lock')){
+                BodyMo.scrollTop = window.pageYOffset;
+                $('#wrap').css('top',-(BodyMo.scrollTop));
+                $('html').addClass('lock');
+            }
+    	},
+    	unlock: function(){
+    		$('html').removeClass('lock');
+    		$('#wrap').removeAttr('style');
+            window.scrollTo(0, BodyMo.scrollTop);
+            window.setTimeout(function (){
+                BodyMo.scrollTop = '';
+            }, 0);
+    	}
+    }
+    
+  //body scroll lock
+    var BodyPc = {
+    	scrollTop :'',
+    	lock: function(){
+    		BodyPc.scrollTop = window.pageYOffset;
+    		$('#wrap').css({
+    			top: - (BodyPc.scrollTop)
+    		});
+    		$('html').addClass('lock');
+    	},
+    	unlock: function(){
+    		$('html').removeClass('lock');
+    		$('#wrap').removeAttr('style');
+    		window.scrollTo(0, BodyPc.scrollTop);
+    		window.setTimeout(function (){
+    			BodyPc.scrollTop = '';
+    		}, 0);
+    	}
+    }
+
+
+    /**
+     * 런타임 상에서 사용되는 유틸 함수
+     * @type {Object}
+     */
+    var functions = {};
+
+    functions.renderPrice = {
+
+        name : '현재가 렌더링',
+
+        parameters : ['현재가', '등락율'],
+
+        run : function (price, rate) {
+
+            var floatedRate = parseFloat(rate);
+
+            var span = $('<span class="press-updown-icon-container">');
+            var icon = $('<img class="press-updown-icon">');
+
+            if (floatedRate > 0) {
+
+                span.addClass('press-up-color');
+                icon.attr('src', PRESS_HOME + '/img/runtime/icon_up.png');
+
+            } else if (floatedRate < 0) {
+
+                span.addClass('press-down-color');
+                icon.attr('src', PRESS_HOME + '/img/runtime/icon_down.png');
+            }
+
+            span.text(price);
+            span.prepend(icon);
+
+            return span;
+        }
+    };
+
+    functions.renderRate = {
+
+        name : '등락율 렌더링',
+
+        parameters : ['등락율'],
+
+        run : function (rate) {
+
+            var floatedRate = parseFloat(rate);
+
+            var span = $('<span class="press-updown-icon-container">');
+
+            if (floatedRate > 0) {
+
+                span.addClass('press-up-color');
+
+            } else if (floatedRate < 0) {
+
+                span.addClass('press-down-color');
+            }
+
+            span.text(rate);
+
+            return span;
+        }
+    };
+
+    functions.renderDate = {
+
+        name : '날짜형식 (YYYY/MM/DD)',
+
+        parameters : ['날자'],
+
+        run : function (date) {
+            var year = date.substring(0, 4);
+            var month = date.substring(4, 6);
+            var day = date.substring(6, 8);
+
+            return year + '/' + month + '/' + day;
+        }
+    };
+
+    functions.closeLayerPopup = function (url) {
+    	
+        var fileName = url.substring(url.lastIndexOf('/') + 1).split('.')[0];
+        var $target = $('#'+fileName);
+        $target.removeClass('shadow_on on');
+
+    };
+
+    functions.openLayerPopup = function (url, title, size) {
+
+        if(event) {
+            event.preventDefault ? event.preventDefault() : (event.returnValue = false);
+        }
+
+
+        var fileName = url.substring(url.lastIndexOf('/') + 1).split('.')[0];
+        fileName = fileName.replace(/\(/,'').replace(/\)/,'');
+        var $target = $('#'+fileName);
+
+        if($target.size() == 0) {
+
+        	var $body = $('body');
+        	
+            var $modalMarkup = '';
+            if(size == "MO_FULL"){
+            	if(title == '알려드립니다' || title == '알려드립니다.'){
+            		$modalMarkup += '<div id="' + fileName + '" class="dialog bottom use_biz" role="dialog" aria-hidden="true" aria-labelledby="fullDialogLabel">';
+            	}else{
+            		$modalMarkup += '<div id="' + fileName + '" class="dialog full use_biz" role="dialog" aria-hidden="true" aria-labelledby="fullDialogLabel">';
+            	}
+            	$modalMarkup += '<div class="dialog_wrap">';
+            	$modalMarkup += '<div class="dialog_header">';
+            	$modalMarkup += '<h2 id="fullDialogLabel">' + title + '</h2>';
+            	$modalMarkup += '<a href="#' + fileName + '" class="dialog_close case_cms dialog_mo" role="button"><span class="offscreen">팝업창 닫기</span></a>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '<div class="dialog_content">';
+            	$modalMarkup += '<div class="section">';
+            	//$modalMarkup += body;
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	
+            	
+            }else if(size == "MO_IMG_POP"){
+            	$modalMarkup += '<div id="' + fileName + '" class="dialog modal t2 use_biz" role="dialog" aria-hidden="true">';
+            	$modalMarkup += '<div class="dialog_wrap">';
+            	$modalMarkup += '<div class="dialog_header">';
+            	$modalMarkup += '<h2 class="offscreen">' + title + '</h2>';
+            	$modalMarkup += '<a href="#' + fileName + '" class="dialog_close case_cms dialog_mo" role="button"><span class="offscreen">팝업창 닫기</span></a>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '<div class="dialog_content">';
+            	//$modalMarkup += body;
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            }else if(size == "PC_IMG_POP"){
+            	$modalMarkup += '<div id="' + fileName + '" class="dialog" role="dialog" aria-hidden="false" aria-live="polit">';
+            	$modalMarkup += '<div class="dialog_table">';
+            	$modalMarkup += '<div class="dialog_cell">';
+            	$modalMarkup += '<div class="dialog_wrap s cla_guide">';
+            	$modalMarkup += '<div class="dialog_header">';
+            	$modalMarkup += '<h2 class="offscreen">' + title + '</h2>';
+            	$modalMarkup += '<a href="#' + fileName + '" class="dialog_close case_cms" role="button"><span class="offscreen">팝업창 닫기</span></a>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '<div class="dialog_content">';
+            	//$modalMarkup += body;
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            	$modalMarkup += '</div>';
+            }else if(size == "PC_SMALL"){
+	            $modalMarkup += '<div id="' + fileName + '" class="dialog" aria-hidden="false" aria-live="polit">';
+				$modalMarkup += '<div class="dialog_table">';
+				$modalMarkup += '<div class="dialog_cell">';
+				$modalMarkup += '<div class="dialog_wrap s">';
+				$modalMarkup += '<div class="dialog_header">';
+				$modalMarkup += '<h2>' + title + '</h2>';
+				$modalMarkup += '<a href="#' + fileName + '" class="dialog_close case_cms" role="button"><span class="offscreen">팝업창 닫기</span></a>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '<div class="dialog_content">';
+				$modalMarkup += '<div class="dialog_content_scroller simplebar">';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+//				$modalMarkup += '<div class="dialog_footer">';
+//				$modalMarkup += '<div class="btn_set">';
+//				$modalMarkup += '<a href="#' + fileName + '" class="btn c2 dialog_close case_cms">확인</a>';
+//				$modalMarkup += '</div>';
+//				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+            }else if(size == "PC_MEDIUM"){
+	            $modalMarkup += '<div id="' + fileName + '" class="dialog" aria-hidden="false" aria-live="polit">';
+				$modalMarkup += '<div class="dialog_table">';
+				$modalMarkup += '<div class="dialog_cell">';
+				$modalMarkup += '<div class="dialog_wrap m">';
+				$modalMarkup += '<div class="dialog_header">';
+				$modalMarkup += '<h2>' + title + '</h2>';
+				$modalMarkup += '<a href="#' + fileName + '" class="dialog_close case_cms" role="button"><span class="offscreen">팝업창 닫기</span></a>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '<div class="dialog_content">';
+				$modalMarkup += '<div class="dialog_content_scroller simplebar">';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+//				$modalMarkup += '<div class="dialog_footer">';
+//				$modalMarkup += '<div class="btn_set">';
+//				$modalMarkup += '<a href="#' + fileName + '" class="btn c2 dialog_close case_cms">확인</a>';
+//				$modalMarkup += '</div>';
+//				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+            }else{       
+	            $modalMarkup += '<div id="' + fileName + '" class="dialog" role="dialog" aria-hidden="false" aria-live="polit">';
+				$modalMarkup += '<div class="dialog_table">';
+				$modalMarkup += '<div class="dialog_cell">';
+				$modalMarkup += '<div class="dialog_wrap">';
+				$modalMarkup += '<div class="dialog_header">';
+				$modalMarkup += '<h2>' + title + '</h2>';
+				$modalMarkup += '<a href="#' + fileName + '" class="dialog_close case_cms" role="button"><span class="offscreen">팝업창 닫기</span></a>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '<div class="dialog_content">';
+				$modalMarkup += '<div class="dialog_content_scroller simplebar">';
+	//			$modalMarkup += '<div class="simplebar-track" style="display: none;">';
+	//			$modalMarkup += '<div class="simplebar-scrollbar"></div>';
+	//			$modalMarkup += '</div>';
+	//			$modalMarkup += '<div class="simplebar-scroll-content" tabindex="0">';
+	//			$modalMarkup += '<div class="simplebar-content">';
+				//$modalMarkup += body;
+	//			$modalMarkup += '</div>';
+	//			$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '<div class="dialog_footer">';
+				$modalMarkup += '<div class="btn_set">';
+				$modalMarkup += '<a href="#' + fileName + '" class="btn c2 dialog_close case_cms" role="button">확인</a>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+				$modalMarkup += '</div>';
+            }
+            $modalMarkup = $($modalMarkup);
+            
+            size && $modalMarkup.addClass(size);
+
+            $modalMarkup.find('.lp_btnClose').on('click', function(){
+                $modalMarkup.removeClass('shadow_on on');
+            });
+
+            $modalMarkup.addClass('on shadow_on').appendTo('body:eq(0)');
+
+            $.ajax({
+                url : url,
+                type : 'GET',
+                dataType: 'text',
+                success : function(resp) {
+                    resp = resp.replace(/(\r\n|\n|\r)/gm,"");
+
+                    var bodyPattern = /<body>(.*?)<\/body>/;
+                    var stylePattern = /<style>(.*?)<\/style>/;
+                    var matches = resp.match(bodyPattern);
+                    var body = matches[1];
+
+                    matches = resp.match(stylePattern);
+
+                    var style = matches && matches[1], $style = null;
+
+                    if (style) {
+                        $style = $('<style>' + style + '</style>');
+                        $style.attr('id', 'style-' + fileName);
+                    }
+
+
+                    body = body.replace('webponent.press.runtime.run();', 'webponent.press.runtime.run(false,{layer:true});');
+
+                    var $tempDiv = $('<div>' + body + '</div>');
+
+                    var libraryKeys = [];
+
+                    $tempDiv.find('.wpc').each(function(){
+                        var $this = $(this);
+
+                        var markupWrapper = getMarkup($this);
+                        var settingObj = getMarkupSetting($this);
+
+                        var componentType = markupWrapper.attr('data-componentid')
+                            ? markupWrapper.attr('data-componentid').split('-')[0]
+                            : settingObj.type;
+
+
+                        var libType = settingObj.settingName ? settingObj.settingName : settingObj.type;
+
+
+                        if (libType === 'videop') {
+                            libType = 'video';
+                        } else if ((libType === 'chart' || libType === 'visual' || componentType === 'chart' || componentType === 'visual')
+                            && $.inArray('chart_common', libraryKeys) < 0) {
+
+                            libraryKeys.push('chart_common');
+                        }
+
+                        if ($.inArray(libType, libraryKeys) < 0) {
+                            libraryKeys.push(libType);
+                        }
+
+                    });
+
+
+
+                    var $currentHead = $('head');
+                    var $currentScripts = $currentHead.find('script');
+                    var $currentLinks = $currentHead.find('link');
+
+
+                    _.each(libraryKeys, function(libKey) {
+						/*var needfulCss = self.libraries.css[libKey];
+						 if (needfulCss) {
+						 _.each(needfulCss, function(e, i) {
+						 var $link = $(e);
+						 var href = $link.attr('href');
+						 var $matchLink = $currentLinks.filter('[href="' + href + '"]');
+						 if($matchLink.length == 0) {
+						 $currentHead.append($link);
+						 }
+						 });
+						 }*/
+
+                        var needfulJs = self.libraries.js[libKey];
+                        if (needfulJs) {
+
+                            _.each(needfulJs, function(e, i) {
+                                var $script = $(e);
+                                var src = $script.attr('src');
+                                var $matchScript = $currentScripts.filter('[src="' + src + '"]');
+
+                                if($matchScript.length === 0) {
+                                    $currentHead.append($script);
+                                }
+                            });
+                        }
+
+                    });
+
+                    if ($style && $('#style-' + fileName).length === 0) {
+                        $currentHead.append($style)
+                    }
+                    
+//                    var popupHei = $modalMarkup.find('.simplebar-content').height()
+//                	if(popupHei){
+//                		$modalMarkup.find('.dialog_content_scroller').height(768)
+//            		}else{
+//            			$modalMarkup.find('.dialog_content_scroller').height(popupHei)
+//        			}
+                    
+                    if(size == "MO_FULL"){
+                    	$modalMarkup.find('.section').append(body);
+                    	var fixedBtn = "";
+                    	if(!(title == '알려드립니다' || title == '알려드립니다.')){
+                    		fixedBtn += '<div class="fixed_bottom_button t1">';
+                    		fixedBtn += '<ul class="grid s1">';
+                    		fixedBtn += '<li><a href="#" class="btn bsr1 bc1 ui_dialog_close_cms">확인</a></li>';
+                    		fixedBtn += '</ul>';
+                    		fixedBtn += '</div>';
+                    		$modalMarkup.find('.dialog_content').addClass('after_btn');
+                    	}
+                    	$modalMarkup.find('.dialog_wrap').append(fixedBtn);
+                    	
+                    	var tabMarkup = $modalMarkup.find(".ci-tab:eq(0)");
+                    	// 소스수정 : 김정혜
+    	    			// tab 초기화 시 option 값 추가
+    	    			var option = {
+
+    	    		            panelOpen : function (e, s, p) {
+
+    	    		                p.find('.wpc').each(function () {
+
+    	    		                    var componentWrapper = $(this);
+
+    	    		                    webponent.press.runtime.runComponent(componentWrapper, webponent.press.runtime.editing());
+    	    		                });
+    	    		            }
+    	    		        };
+                    	var $activeText = '현재선택';
+                	    if($('html').attr('lang') == 'en')$activeText = 'Activation Menu';
+                	    tabMarkup.find('.ci-tab-active > a').attr('title',$activeText);
+                	    tabMarkup.find('.tab-item').each(function(){
+                			var $link = $(this).find('a'),
+                				$href = $link.attr('href');
+                			if($href == '' || $href == undefined)$link.attr('href','#');
+                		});
+
+                    	webponent.tab.init(tabMarkup, option);
+                    	var accoMarkup = $modalMarkup.find('.press-accordion-wrapper:eq(0)');
+                        webponent.accordion.init(accoMarkup);
+                        
+                        $(".mo_biz_tooltip_info").parent().hide();
+    	    		    $(".mo_biz_tooltip_info").parent().removeClass("hidden-component");
+    	    		    $(".mo_biz_tooltip_info").parent().parent().removeClass("hidden-component");
+    	    		    $(".press-button").on("click", function() {
+    	    	    		setTimeout(function() {
+    	    	    			$(".mo_biz_tooltip_btn > a").off("click").on("click", function(e) {
+    	    				    	e.preventDefault();
+    	    				    	$(this).next().children().toggle();
+    	    				    });
+    	    	    		}, 1000);
+    	    		   	});
+    	    		    
+    	    		    $(document).on('click touchend',function(e){
+	    		    		$('.mo_biz_tooltip_info').parent().hide();
+                        }).on('click touchend','.mo_biz_tooltip_btn',function(e){
+                            e.stopPropagation();
+                        });
+                        
+                        $(".mo_biz_tooltip_close").on("click", function(){
+                        	$(this).parent().parent().parent().hide();
+                        });
+                        
+                        // 모바일 툴팁버튼 text삽입
+                        $('.mo_biz_tooltip_close > a > span').text('자세한 내용 닫기');
+                        $('.mo_biz_tooltip_btn > a > span').text('자세한 내용 확인');
+                        
+                        $(".wpc-attach-file").find("a").each(function(index, item){
+                	    	// 첨부파일 target="_blank"에 title="새창 열림" 추가
+                	    	if($(item).attr("target") == "_blank"){
+                	    		$(item).attr("title","새창 열림");
+                	    	}
+                	    	
+                	    	//모바일앱 첨부파일 다운로드 모듈 변경
+                	    	if($(item).attr("href") != "#" && _isDevice == "A"){
+                	    		var fileFullPath = $(item).attr("href");
+                	    		var split_s = fileFullPath.split("/");
+                	    		var split_p = fileFullPath.split(".");
+                	    		var fileName = split_s[split_s.length - 1];
+                	    		var path = fileFullPath.substring(0, fileFullPath.length - split_s[split_s.length - 1].length);
+                	    		var ext = split_p[split_p.length - 1];
+                	    		
+                	    		$(item).attr("href","#");
+                	    		$(item).attr("onclick","commFileDown('"+fileName+"', '"+ext+"', '"+path+"');");
+                	    	}
+                	    });
+                        
+                        if(_isDevice == "A"){
+                			$("a[target=_blank]").each(function(index, item){
+                				if($(item).attr("href") != "#"){
+                					var ex = $(item).attr("href").split(".")[$(item).attr("href").split(".").length-1];
+                					var comp_ex = ["doc","xls","docx","xlsx","pdf","ppt","pptx","txt","word","zip","mp4","wmv","exe"];
+                					var isComp = false;
+                					for(var i in comp_ex.length){
+                						comp_ex[i] == ex ? isComp = true : "";
+                					}
+                					if(isComp != true){
+                						// 첨부파일 target="_blank"에 title="새창 열림" 추가
+                						if($(item).attr("title") == ""){
+                							$(item).attr("title","새창 열림");
+                						}
+                						var goWeb = $(item).attr("href");
+                						$(item).attr("href","#");
+                						if(goWeb.indexOf("/") == 0){
+                					    	$(item).attr("onclick","exWNExtPopup('"+_pcDomain+goWeb+"');");
+                						}else{
+                							$(item).attr("onclick","exWNExtPopup('"+goWeb+"');");
+                						}
+                					}
+                				}
+                		    });
+                		}
+                        
+                    	//setTimeout(function(){
+                            Dialog_cms_mo.open("#"+fileName);
+                        //},200)
+                    }else if(size == "MO_IMG_POP"){
+                        $modalMarkup.find('.dialog_content').html(body);
+                        //setTimeout(function(){
+                            Dialog_cms_mo.open("#"+fileName);
+                        //},200)
+                    	
+                    	var tabMarkup = $modalMarkup.find(".ci-tab:eq(0)");
+                    	
+                    	webponent.tab.init(tabMarkup, option);
+                    	
+                    	if ($('.guide_info_swipe').length > 0){
+                			$('.guide_info_swipe').slick({
+                				dots: true,
+                				//adaptiveHeight: true,
+                				arrows: false,
+                				infinite: false
+                			});
+                			$('.guide_info_swipe').on('beforeChange',function(event,slick,currentSlide,nextSlide){
+                				var i = nextSlide;
+                				$(this).siblings('.guide_info_img').find('.img').eq(i).addClass('on').siblings().removeClass('on');
+                			});
+                		}
+                    	
+                    	if($modalMarkup.find('.guide_info_swipe').length){
+            				//$(tar).find('.guide_info_swipe').slick('resize');
+            				//$(tar).find('.guide_info_swipe').slick('setOption', 'refresh', '', true);
+                    		$modalMarkup.find('.guide_info_swipe').slick('refresh');
+                    		$modalMarkup.find('.guide_info_swipe').slick('slickGoTo',0);
+            			}
+                    	
+                    }else if(size == "PC_IMG_POP"){
+                    	$modalMarkup.find('.dialog_content').html(body);
+                    	Dialog_cms.init();
+                        Dialog_cms.open("#"+fileName);
+                        
+                        var $tableFixedHoriz =  $('.table_fixed.horiz'), tableHeight = $tableFixedHoriz.find('table').height();
+                    	$tableFixedHoriz.find('.scroll_horiz').css('height', tableHeight);
+//                    	$('.dialog_content_scroller').simplebar();
+                    	if ($('.simplebar').length > 0) {
+                    		$('.simplebar').mCustomScrollbar({
+                    			advanced:{
+                    				autoScrollOnFocus:true,
+                    				updateOnContentResize:true
+                    			}
+                    		});
+                    	}
+                    	scrollItem.init();
+
+//                    	var fullHeight = $(window).outerHeight() - $modalMarkup.find('.dialog_header').outerHeight() - $modalMarkup.find('.dialog_footer').outerHeight() - 200,
+//    	    				$dialogContent = $modalMarkup.find('.dialog_content_scroller'), contentHeight = $dialogContent.find('.mCSB_container').outerHeight();
+//    		    			(fullHeight > contentHeight) ? $dialogContent.css('height',contentHeight) : $dialogContent.css('height',fullHeight);
+    		    			
+		    			if ($('.cla_guide_slide').length > 0){
+		    				$('.cla_guide_img').find('.img').eq(0).fadeIn();
+		    				var $claGuideSlide = $('.cla_guide_slide').slick({
+		    					infinite: false,
+		    					appendArrows:$('.cla_guide_slide'),
+		    					prevArrow:'<button type="button" class="prev slick-prev"><span class="offscreen">이전 안내화면</span></button>',
+		    					nextArrow:'<button type="button" class="next slick-next"><span class="offscreen">다음 안내화면</span></button>',
+		    					appendDots:$('.cla_guide_slide'),
+		    					dots:true,
+		    					customPaging: function(slider, i) {
+		    						return $('<button type="button" data-role="none" role="button" tabindex="0" />').text(i + 1 + '번째 안내화면');
+		    					},
+		    				});
+		    				$claGuideSlide.on('beforeChange',function(event,slick,currentSlide,nextSlide){
+		    					var i = nextSlide;
+		    					$(this).siblings('.cla_guide_img').find('.img').eq(i).fadeIn().siblings().fadeOut();
+		    				});
+		    				
+		    				if($('.cla_guide_slide').length > 0){
+		    					$('.cla_guide_slide').slick('slickSetOption', 'refresh', '', true);
+		    				}
+		    			}
+                    }else{
+                    	$modalMarkup.find('.dialog_content_scroller').html(body);
+                    	
+                    	$modalMarkup.find('.wp-theme-idb_pc').attr("style","width:100% !important");
+                    	
+                    	Dialog_cms.init();
+                        Dialog_cms.open("#"+fileName);
+                        
+                        var $tableFixedHoriz =  $('.table_fixed.horiz'), tableHeight = $tableFixedHoriz.find('table').height();
+                    	$tableFixedHoriz.find('.scroll_horiz').css('height', tableHeight);
+//                    	$('.dialog_content_scroller').simplebar();
+                    	if ($('.simplebar').length > 0) {
+                    		$('.simplebar').mCustomScrollbar({
+                    			advanced:{
+                    				autoScrollOnFocus:true,
+                    				updateOnContentResize:true
+                    			}
+                    		});
+                    	}
+                    	scrollItem.init();
+
+    	    			var tabMarkup = $modalMarkup.find(".ci-tab:eq(0)");
+
+        		        // var option = undefined;
+    	    			// 소스수정 : 김정혜
+    	    			// tab 초기화 시 option 값 추가
+    	    			var option = {
+
+    	    		            panelOpen : function (e, s, p) {
+
+    	    		                p.find('.wpc').each(function () {
+
+    	    		                    var componentWrapper = $(this);
+
+    	    		                    webponent.press.runtime.runComponent(componentWrapper, webponent.press.runtime.editing());
+    	    		                });
+    	    		            }
+    	    		        };
+        		        
+    	    			webponent.tab.init(tabMarkup, option);
+    	    			
+                    	$(".biz_tooltip_info").parent().parent().parent().hide();
+                    	$(".biz_tooltip_panel").removeClass("hidden-component");
+                    	$(".biz_tooltip_panel_top").removeClass("hidden-component");
+                    	$(".biz_tooltip_panel").parent().parent().removeClass("hidden-component");
+                    	$(".biz_tooltip_close").on("click", function(){
+                    		$(this).parent().parent().parent().parent().parent().hide();
+                    	});
+                    	$(".biz_tooltip_btn > a").off('click').on('click', function(){
+            				$(this).parent().children().eq(1).children().toggle();
+            			});
+                    	
+                    	// 툴팁은 처음부터 말풍선이 보이지 않음
+                    	var tooltip_open_txt = "말풍선열기";
+                    	var tooltip_close_txt = "말풍선닫기";
+                    	if($("html").attr("lang") == "en"){
+                    		tooltip_open_txt = "Open Description";
+                    		tooltip_close_txt = "Close Description"; 
+                    	}
+                    	$('.biz_tooltip_close > a > span').text(tooltip_close_txt);
+                    	$('.biz_tooltip_btn > a > span').text(tooltip_open_txt);                    	
+                    	$('.biz_tooltip_btn').on('click', function() {
+                    		if ($(this).children().eq(1).children().eq(0).css('display') == 'none') {
+                        		$(this).children().eq(0).children().eq(0).text(tooltip_open_txt);
+                    		} else if ($(this).children().eq(1).children().eq(0).css('display') == 'block') {
+                    			$(this).children().eq(0).children().eq(0).text(tooltip_close_txt);
+                        	}	
+                    	});
+                    	
+                    	
+                    	dialogHeight();
+                    }
+                    
+//                    $modalMarkup.find('a').on('click', function(e){
+//                    	e.preventDefault();
+//                    });
+                    
+//                    $('#press-component-handler').hide();
+                    Loading.close();
+                },
+                error : function(error) {
+                    console.log(error);
+                }
+            });
+
+            var getMarkup = function (markup) {
+
+                if(markup.hasClass('wpc')){
+                    return markup;
+                }else{
+                    return markup.find('> .wpc');
+                }
+
+            };
+
+            //TODO: 다시 췍췍
+            var getMarkupSetting = function (wrapper) {
+
+                try {
+                    var settingScript = wrapper.find('> [data-component-setting]');
+
+                    var ret = $.parseJSON(settingScript.text());
+
+                    if(ret == null) {
+                        throw 'setting null';
+                    }
+
+                    return ret;
+                } catch (e) {
+                	if(getMarkup(wrapper).find('> :first-child').get(0).nodeName != undefined){
+	                    var nodeName = getMarkup(wrapper).find('> :first-child').get(0).nodeName.toLowerCase();
+	                    if (nodeName.indexOf('h') != 0) { // h1,h2 etc
+	                        nodeName = 'text';
+	                    }
+	                    return {
+	                        "type": "text",
+	                        "settingName": nodeName
+	                    };
+                	}
+                }
+            };
+
+            return;
+        }
+
+        $target.find('.lp_title').text(title);
+        $target.removeClass('lSize sSize').addClass(size);
+
+        $target.addClass('on shadow_on');
+
+        setTimeout(function(){
+            $('#press-component-handler').hide();
+        },100);
+
+    };
+
+
+    function getMarkup (wrapper) {
+
+        if(wrapper.hasClass('wpc')){
+            wrapper.removeClass('cke_editable cke_editable_inline cke_contents_ltr cke_show_borders cke_focus')
+                .removeAttr('cke_instance title contenteditable');
+            return wrapper;
+        }
+        var markup = wrapper.find('> .wpc');
+        if(markup.length>0) {
+            return markup;
+        }
+    }
+
+    function runComponent (componentWrapper, mode) {
+
+        if (componentWrapper.find('.press-component-handler').length > 0) {
+            return;
+        }
+
+        var markup = componentWrapper;
+        var settingObj = webponent.press.components[componentWrapper.data('componentid')];
+
+        self.cleanComponentMarkup(markup);
+
+        if(settingObj != undefined){
+	        if(settingObj.settingName === "bxSlider"){
+	            var options = {
+	                "pager" : settingObj.options.paging,
+	                "auto" : settingObj.options.auto,
+	                "autoControls" : settingObj.options.auto,
+	                "touchEnabled":true,
+	                "controls" : settingObj.options.button,
+	                "adaptiveHeight" : settingObj.options.adaptiveHeight
+	            };
+	
+	            componentWrapper.children().show();
+	            componentWrapper.bxSlider(options);
+	
+	            if(settingObj.theme){
+	                componentWrapper.closest('.bx-wrapper').addClass(settingObj.theme);
+	            }
+	        }
+        
+
+        if(settingObj.settingName === "tab"){
+            var tabUse = settingObj.link.use;
+
+            $(tabUse).each(function(i){
+                var target = markup.find('ul.tab-selector > li > a').eq(i);
+                if(tabUse[i]){
+                    target.attr('onClick','location.href=this.href')
+                }
+            });
+        }
+
+        if(settingObj.settingName === "accordion"){
+            var $target = componentWrapper.find('> .press-accordion-wrapper:eq(0)');
+            webponent.accordion.init($target);
+        }
+
+        if(settingObj.settingName === "resp_tab"){
+            var theme = settingObj.theme || 'none';
+            var $ul = markup.find('ul.resp-tab-list').eq(0);
+            var $li =$ul.children('li');
+            if($li.children('a').length === 0){
+                $li.each(function(){
+                    var txt = $(this).text();
+                    $(this).text('');
+                    $(this).append('<a href="#" class="resp-tab-anchor">'+txt+'</a>');
+                })
+            }
+
+            var $a = $li.children('a');
+            var $mobileTitle = markup.find('>.resp-heading');
+
+			/* eugene slider tab */
+            $ul.removeAttr('class').addClass('resp-tab-list');
+            $(this).removeAttr('style');
+            if($ul.prev().hasClass('m-tab-left')){
+                var cloneUl = $ul[0].outerHTML;
+                $(this).prepend(cloneUl);
+                $(this).children().eq(1).remove();
+
+                $ul.css('z-index',5);
+                $ul.parent().css('z-index',5);
+            }
+
+            if(webponent.mobileTab !== undefined){
+                webponent.mobileTab.init(markup.find('.resp-tab-list'));
+            }
+
+
+            var $selectTab = markup.find('>ul>li.resp-tab-item, >.resp-heading');
+            var $tabActive = $selectTab.filter('.tab-active');
+            var $panel =markup.find('>.resp-tab-panel');
+
+            $li.removeClass("tab-active")
+                .filter(':first').addClass("tab-active");
+            $mobileTitle.removeClass("tab-active")
+                .filter(':first').addClass("tab-active");
+            $panel.hide().eq(0).show();
+
+            if(settingObj.mobileChk){
+                markup.find('> h3').addClass('m-resp-heading');
+                markup.find('> ul').addClass('m-resp-tab-list');
+            }else{
+                markup.find('> h3').removeClass('m-resp-heading');
+                markup.find('> ul').removeClass('m-resp-tab-list');
+
+            }
+            if(theme === "none"){
+                $selectTab.css(settingObj.style);
+                $tabActive.css(settingObj.selected);
+                $a.add($mobileTitle).css({
+                    'font-size':settingObj.style.fontSize,
+                    'font': settingObj.style.font,
+                    'color': settingObj.style.fontColor
+                });
+
+                $tabActive.find('a').add(markup.find(' > h3.tab-active')).css({
+                    'font-size':settingObj.selected.fontSize,
+                    'font': settingObj.selected.font,
+                    'color': settingObj.selected.fontColor
+                });
+            }
+
+            $selectTab.off('click').on('click', function (e) {
+                e.preventDefault();
+
+                var indexNum = $(this).index();
+
+                if($ul.css('display') === 'none'){
+                    if($(this).hasClass('tab-active')){
+                        $(this).removeClass('tab-active');
+                        $panel.css("display","none").hide();
+                    }else{
+                        $(this).addClass('tab-active').siblings().removeClass("tab-active");
+                        indexNum = $(this).index() /2 - 0.5;
+                        $li.removeClass("tab-active").eq(indexNum).addClass('tab-active');
+                        $panel.css("display","none").eq(indexNum).show();
+
+                        var $goToHead = $(this).closest('.wpc');
+                        $('html, body').animate({scrollTop : $goToHead[0].offsetTop}, 400);
+                    }
+                }else{
+                    $(this).addClass('tab-active').siblings().removeClass("tab-active");
+                    $mobileTitle.removeClass("tab-active").eq( indexNum ).addClass('tab-active');
+                    indexNum = $(this).index();
+                    $panel.css("display","none").eq(indexNum).show();
+                }
+
+                var $selectPanel = $panel.eq(indexNum);
+
+                /** check Chart component **/
+                var checkChart = $selectPanel.find('.wpc');
+                if(checkChart !== undefined){
+                    checkChart.filter(function(){
+                        var $id = $(this).attr('data-componentid');
+                        if(
+                            $id.indexOf('chart') > -1 ||
+                            $id.indexOf('visual') > -1 ||
+                            $id.indexOf('grid') > -1
+                        ){
+                            var $chart  =$selectPanel.find('[data-componentid = '+$id+']');
+                            var chartMarkup = getMarkup($chart);
+                            var chartSetting = webponent.press.components[$chart.data('componentid')];
+                            webponent.press.component[chartSetting.settingName+"ComponentScript"](chartMarkup, chartSetting);
+                        }
+                    })
+                }
+                if(theme === "none"){
+                    $selectTab.css(settingObj.style);
+                    $selectTab.filter('.tab-active').css(settingObj.selected);
+                    $a.add($mobileTitle).css({
+                        'font-size':settingObj.style.fontSize,
+                        'font': settingObj.style.font,
+                        'color': settingObj.style.fontColor
+                    });
+                    $selectTab.filter('.tab-active').find('a').add($selectTab.filter('h3.tab-active')).css({
+                        'font-size':settingObj.selected.fontSize,
+                        'font': settingObj.selected.font,
+                        'color': settingObj.selected.fontColor
+                    });
+                }
+                if(webponent.mobileTab !== undefined){
+                    var wid = 0;
+                    $ul.find(' > li').each(function() {
+                        wid += $(this).outerWidth(true);
+                    });
+
+                    if(wid > window.innerWidth){
+                        $ul.css({'width': wid+1,'height': ''});
+                    }
+                }
+            });
+        }
+
+        if(settingObj.type === "button") {
+            var $evt = settingObj.btnEvent;
+
+            if($evt && $evt.use){
+                markup.find('.press-button').off($evt.type).on($evt.type ,function(e){
+
+                    e.preventDefault();
+
+                    if(!$.isArray($evt.target)){
+                        $evt.target = [$evt.target];
+                        $evt.animation = [$evt.animation];
+                    }
+
+                    $($evt.target).each(function(i){
+                        var $target = $("div").filter("#" + $evt.target[i]);
+                        switch ($evt.animation[i]) {
+                            case 'toggle' :
+                                $target.toggle();
+                                break;
+                            case 'hide' :
+                                $target.hide();
+                                break;
+                            case 'show' :
+                                $target.show();
+                                break;
+                            default :
+                        }
+                    });
+                });
+                
+                $(document).on('click touchend',function(e){
+		    		$('.mo_biz_tooltip_info').parent().hide();
+		    		$('.biz_tooltip_panel').parent().hide();
+                }).on('click touchend','.mo_biz_tooltip_btn',function(e){
+                    e.stopPropagation();
+                }).on('click touchend','.biz_tooltip_btn',function(e){
+                    e.stopPropagation();
+                });
+                
+                $(".mo_biz_tooltip_close").on("click", function(){
+                	$(this).parent().parent().parent().hide();
+                });
+            }
+        }
+
+        if(settingObj.type === "chart" || settingObj.type === "visual") {
+
+            var wrapperName = settingObj.type === 'chart' ? '.component-chart-wrapper' : '.component-' + settingObj.themeKey + '-wrapper';
+
+            var wrapper = $(wrapperName, markup);
+
+            wrapper.off('drawCompleted').on('drawCompleted', function() {
+
+                webponent.press.event.trigger('svg.complete');
+            });
+        }
+        
+
+        if(_.isFunction(webponent.press.component[settingObj.settingName + "ComponentScript"])) {
+
+            webponent.press.component[settingObj.settingName + "ComponentScript"](markup, settingObj);
+
+        }else {
+
+            console.log(settingObj.settingName + ' component is not undefined');
+        }
+        }
+        try{
+	        var $accoTarget = componentWrapper.eq(0).find('> .press-accordion-wrapper');
+	        if($accoTarget.length >= 1){
+	        	webponent.accordion.init($accoTarget);
+	        }
+        }catch(e){}
+        try{
+        	var tabMarkup = componentWrapper.eq(0).find(".ci-tab:eq(0)");
+	        var option = undefined;
+	        
+			webponent.tab.init(tabMarkup, option);
+        }catch(e){}
+        try{
+			$(".biz_tooltip_btn > a").off('click').on('click', function(){
+				if($(this).parent().children().eq(1).children().css("display") == "none"){
+					$(".biz_tooltip_info").parent().parent().parent().hide();
+				}
+				$(this).parent().children().eq(1).children().toggle();
+			});
+			
+			$(".mo_biz_tooltip_btn > a").off('click').on('click', function(){
+				if($(this).parent().children().eq(1).children().css("display") == "none"){
+					$(".mo_biz_tooltip_info").parent().hide();
+				}
+				$(this).parent().children().eq(1).children().toggle();
+			});
+        }catch(e){}
+        try{
+        	var $sliderTarget = componentWrapper.eq(0).hasClass("wpc-bxslider");
+        	var $sliderTarget_init = componentWrapper.eq(0).hasClass("init-bxslider");
+	        if($sliderTarget == true && $sliderTarget_init == false){
+	            var options = {
+	                "pager" : true,
+	                "auto" : false,
+	                "autoControls" : false,
+	                "touchEnabled":true,
+	                "controls" : false,
+	                "adaptiveHeight" : false
+	            };
+	
+	            componentWrapper.children().show();
+	            componentWrapper.bxSlider(options);
+	        }
+        }catch(e){}
+    }
+
+    /**
+     * 페이지 스크립트를 실행시킨다.
+     * @param  {Boolean} mode 프레스에서 실행시킬때 true, 퍼블리싱됬을때는 false
+     */
+    function runPage (mode, obj) {
+
+        var config = {
+            layer : false
+        };
+
+        $.extend(config, obj);
+
+        var page = $('.wp-content');
+        var componentWrappers = page.find('[data-componentid]');
+        var pageSettingMarkup = $('[data-page-setting]');
+
+        try {
+            var pageSettingObj = $.parseJSON($.trim(pageSettingMarkup.html()).replace(/(\r\n|\n|\r)/gm,"").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'));
+            
+            if(pageSettingObj.components != undefined){
+	            webponent.press.components = pageSettingObj.components;
+	            delete pageSettingObj.components;
+            }
+
+            pageSettingMarkup.text(JSON.stringify(pageSettingObj));
+
+        }catch (E) {
+            console.log(E);
+            return;
+        }
+
+        if(!config.layer) {
+            //레이어 팝업으로 실행시, pageSetting를 변경X
+            pageSetting = pageSettingObj;
+        }
+
+        _.each(pageSettingObj.data, function (value, key) {
+
+            if(value.bindType === 'server') {
+                return;
+            }
+
+            var ajaxOption = {};
+
+            if (value.serialize) {
+
+                ajaxOption.data = value.serialize;
+            }
+
+            webponent.press.runtime.getData(value, function (data, id) {
+
+                var $target = $('[data-id="' + id + '"]');
+
+                $target.each(function(){
+
+                    var key = $(this).attr('data-key');
+                    var value = '';
+
+                    try{
+                        if(key) {
+                            if( key.indexOf('[') == 0) {
+                                value = eval('data' + key);
+                            }else {
+                                value = eval('data.' + key);
+                            }
+                            $(this).html(value);
+                        }
+                    }catch(e){
+                        if(e.message.indexOf('undefined') > -1){
+                            $(this).text('');
+                        }
+                    }
+                })
+            }, ajaxOption);
+        });
+
+        componentWrappers.each(function () {
+
+            var componentWrapper = $(this);
+            runComponent(componentWrapper, mode);
+        });
+
+        if (mode) {
+
+            webponent.press.event.trigger('editor.componentAppended');
+
+        }
+		/* runComponent 에서 pageSetting을 못 받아와서 순서 변경 E */
+
+        var pageScript;
+        if (!badBrowser) {
+            pageScript = eval($.trim($('[data-page-script]')[0].innerHTML));
+        } else {
+            pageScript = eval('pageScript =' + $.trim($('[data-page-script]')[0].innerHTML));
+        }
+
+        pageScript(page, pageSettingObj);
+
+        pageMarkup = $('.wp-content');
+        pageScript = pageScript;
+
+        if(isPhantom) {
+			/* svg 갯수 파악 S */
+            // PDF에서 사용하는 event trigger
+            var svgCount = 0;
+
+            componentWrappers.each(function () {
+
+                var componentWrapper = $(this);
+
+                var settingObj = webponent.press.components[componentWrapper.data('componentid')];
+                if(settingObj.type === "chart" || settingObj.type === "visual") {
+                    svgCount ++;
+                }
+            });
+
+            if(svgCount > 0) {
+
+                webponent.press.event.off('svg.complete').on('svg.complete', function () {
+
+                    svgCount --;
+
+                    if(svgCount <= 0) {
+
+                        // webponent.press.event.trigger('svg.success');
+
+                        var event = new Event('svg.success');
+
+                        //console.log("트리거");
+                        document.dispatchEvent(event);
+                    }
+                });
+
+            } else {
+                //console.log("트리거");
+                var event = new Event('svg.success');
+
+                document.dispatchEvent(event);
+            }
+        }
+
+        if (mode) {
+            webponent.press.common.setContentLayoutStyle();
+            webponent.press.interaction.openPageSettingPanel();
+        }
+    }
+
+    function getOriginalHTML () {
+
+        var clonedPage = $('.press-preview').clone(true);
+
+        return $.trim(clonedPage.html());
+    }
+
+    /**
+     * 문서의 HTML 마크업을 복사한다.
+     * @param deploy
+     * @returns {*}
+     */
+    function getHTML (deploy) {
+        var clonedPage = $('.press-preview').clone(true);
+        var contentsElem = clonedPage.find('.wp-content').length ? clonedPage.find('.wp-content') : clonedPage;
+
+        contentsElem.removeClass('press-data-bind-handler-view');
+        clonedPage.find('.wp-content').removeClass('ui-sortable');
+
+        clonedPage.find('.press-page-ruler-scroll-area').remove();
+        clonedPage.find('.wpc').each(function () {
+            var markup = $(this);
+            var setting = webponent.press.components[$(this).data('componentid')];
+
+            webponent.press.interaction.cleanComponentMarkup(markup);
+
+            if (setting.type === 'table') {
+                webponent.press.table.revertTableType(markup, true);
+            }
+        });
+
+
+        var contentStyle = {
+            'width': pageSetting.desktop.width,
+            'padding-top': pageSetting.desktop.padding.top,
+            'padding-bottom': pageSetting.desktop.padding.bottom,
+            'padding-right': pageSetting.desktop.padding.right,
+            'padding-left': pageSetting.desktop.padding.left
+        };
+
+        if (pageSetting.desktop.responsive) {
+            contentStyle.width = '100%';
+            contentStyle['max-width'] = pageSetting.desktop.width;
+        }
+
+        contentsElem.css(contentStyle);
+
+        if (deploy) {
+            contentsElem.addClass('deployed');
+        }
+
+        clonedPage.find('.ui-sortable').removeClass('ui-sortable');
+
+        var result = $.trim(clonedPage.html());
+
+        //&#8203; 문자제거 [ckeditor 에서 붙여주는거 같음]
+        result = result.replace(/\u200B/g,'');
+
+        return result;
+    }
+
+	/*function registerData (dataInfo, data, query) {
+
+	 var key = dataInfo.uniqueId;
+
+	 registeredData[key] = data;
+	 }*/
+
+    function filterDataByKey (data, key) {
+
+        //var filteredData = null;
+
+        if (!key) {
+
+            return data;
+
+        } else if (key.indexOf('[') === 0) {
+
+            return eval('data' + key);
+
+        } else {
+
+            return eval('data.' + key);
+        }
+    }
+
+    function loadData(dataInfo, callback, ajaxOption) {
+        function registerWhenDataIsDirect(dataInfo, elseFun) {
+            if (dataInfo.imported === 'direct') {
+                var resp = dataInfo.directInputData;
+
+                if (_.isString(dataInfo.directInputData)) {
+                    resp = $.parseJSON(dataInfo.directInputData);
+                }
+
+                registeredData[dataInfo.uniqueId] = resp;
+
+                callback(filterDataByKey(resp, dataInfo.key));
+                return;
+            }
+
+            if (elseFun) {
+                elseFun();
+            }
+        }
+
+        if (!ajaxOption) {
+            ajaxOption = {};
+        }
+
+        if (dataInfo.data) {
+            ajaxOption.data = [];
+            _.each(dataInfo.data, function(item) {
+                var name = item.name;
+                var value = item.value;
+
+                if (value.indexOf('$') === 0) {
+
+                    var variable = webponent.press.runtime.variables[value];
+
+                    if (variable) {
+
+                        var variableType = typeof variable;
+
+                        if (variableType === 'function') {
+
+                            value = variable();
+
+                        } else if (variableType === 'string' || variableType === 'number') {
+
+                            value = variable;
+                        }
+                    }
+                }
+
+                var obj = item.serialize;
+
+                if (!_.has(obj, 'data')) {
+
+                    obj.data = {};
+                }
+
+                ajaxOption.data.push($.extend({
+                    name: name,
+                    value: value
+                }));
+            });
+        }
+
+        if (!_.isArray(ajaxOption.data)) {
+            if (!_.has(ajaxOption, 'data')) {
+                ajaxOption.data = {};
+            }
+        }
+
+        var data = registeredData[dataInfo.uniqueId];
+
+        if (!data || dataInfo.isSearch) {
+
+            var url = dataInfo['url'];
+            var results = /\$\{([^}]*)\}/.exec(url);
+            if(results != null){
+                url = url.replace(results[0],window.webponent.press.dataApi[results[1]]);
+            }
+
+            registerWhenDataIsDirect(dataInfo, function() {
+                // 처음으로 데이터 로드
+                registeredData[dataInfo.uniqueId] = $.ajax(_.extend(ajaxOption, {
+                    url: url,
+                    success: function(resp) {
+
+                        if(typeof resp === 'string'){
+                            resp = eval('('+resp+')');
+                        }
+
+                        registeredData[dataInfo.uniqueId] = resp;
+
+                        callback(filterDataByKey(resp, dataInfo.key), dataInfo.uniqueId);
+                    },
+                    error : function(error) {
+                        console.log(error);
+                    }
+                }));
+            });
+
+        } else if (data && data.hasOwnProperty('readyState')) {
+            // 현재 데이터를 로드중 이므로 기다림
+            data.done(function(resp) {
+                if(typeof resp === 'string'){
+                    resp = eval('('+resp+')');
+                }
+                callback(filterDataByKey(resp, dataInfo.key));
+            });
+
+        } else {
+            registerWhenDataIsDirect(dataInfo, function() {
+                // 캐시된 데이터를 사용함
+                callback(filterDataByKey(data, dataInfo.key));
+            });
+        }
+    }
+
+    /**
+     * 페이지 스크립트를 실행시켜준다.
+     * @param  {Boolean} mode true일경우 에디터 모드로 실행되고
+     *                        false일 경우 deploy 모드로 실행된다.
+     */
+    self.run = function (mode) {
+        runPage(mode);
+    };
+
+    /**
+     * [컴퍼넌트를 실행시킨다]
+     * @param  {[node]} componentWrappers [컴퍼넌트 래퍼]
+     * @param  {[string]} mode              [edit 모드 구분파라미터]
+     */
+    self.runComponent = function (componentWrappers, mode) {
+
+        runComponent(componentWrappers, mode);
+    };
+
+    /**
+     * [페이지의 마크업 정보를 가져온다]
+     */
+    self.getPageMarkup = function () {
+
+        return pageMarkup;
+    };
+
+    /**
+     * [페이지의 세팅 값을 가져온다]
+     * @return {[object]} [페이지 세팅]
+     */
+    self.getPageSetting = function () {
+
+        return pageSetting;
+    };
+
+    /**
+     * [페이지의 스크립트를 가져온다]
+     */
+    self.getPageScript = function () {
+
+        return pageScript;
+    };
+
+    /**
+     * [페이지 html 을 가져온다]
+     * @param deploy   편집이 아닌 배포되는 문서인경우 true(default: true)
+     * @returns {*}
+     */
+    self.getHTML = function (deploy) {
+
+        if (deploy === undefined) {
+            deploy = true;
+        }
+        var html = getHTML(deploy);
+
+        return html;
+    };
+
+    self.getOriginalHTML = function () {
+        var html = getOriginalHTML();
+
+        return html;
+    };
+
+    /**
+     * [페이지에 불러와 저장된 데이터를 가져온다]
+     */
+    self.getResiteredData = function () {
+
+        return registeredData;
+    };
+
+    /**
+     * 페이지나 폼에 로드된 데이터는 새로 통신을 하지 않고 캐시된 데이터를
+     * 사용하게 한다.
+     * press에서는 이 메서드를 이용한 데이터 통신을 추천한다.
+     * @param  {[type]}   dataInfo   [description]
+     * @param  {Function} callback   [description]
+     * @param  {[type]}   ajaxOption [description]
+     * @return {[type]}              [description]
+     */
+    self.getData = function (dataInfo, callback, ajaxOption) {
+
+        loadData(dataInfo, callback, ajaxOption);
+    };
+
+    /**
+     * [컴퍼넌트에서 사용하는 데이터를 가져온다]
+     * @param  {[object]}   componentDataInfo [컴퍼넌트 데이터 정보]
+     * @param  {Function}   callback          [callback]
+     * @param  {[object]}   ajaxOption        [ajax option]
+     * @param  {[string]}   componentId       [컴퍼넌트 아이디]
+     */
+    self.getComponentData = function (componentDataInfo, callback, ajaxOption, componentId) {
+
+        var eventName = self.FORMSUBMIT + '.' + componentDataInfo.uniqueId;
+
+        if (componentId) {
+
+            eventName = self.FORMSUBMIT + '.' + componentDataInfo.uniqueId + '.' + componentId;
+        }
+
+        webponent.press.runtime.getData(componentDataInfo, function (data) {
+
+            callback(data, eventName);
+
+        }, ajaxOption);
+
+        if (!ajaxOption) {
+
+            ajaxOption = {};
+        }
+
+        self.setComponentDataEventList(componentId, componentDataInfo.uniqueId);
+
+        webponent.press.event.off(eventName).on(eventName, function (e, data) {
+
+            componentDataInfo.isSearch = false;
+
+            webponent.press.runtime.getData(componentDataInfo, function (data) {
+
+                callback(data, eventName);
+
+            }, ajaxOption);
+        });
+    };
+
+    /**
+     * 컴퍼넌트에 바인드 된 데이터 이벤트를 제거한다.
+     * @param  {[string]} dataId [data unique id]
+     */
+    self.unBindDataEvent = function (dataId) {
+
+        var selectedComponent = webponent.press.interaction.getSelectedComponent();
+        var componentWrapper = selectedComponent.wrapper;
+        var componentId = componentWrapper.attr('data-componentId');
+
+        componentWrapper.removeAttr('data-id');
+        componentWrapper.removeAttr('data-key');
+        componentWrapper.removeClass('press-data-bind-handler');
+
+        var dataBindHandler = componentWrapper.find('.press-data-bind-handler[data-id="' + dataId + '"]');
+
+        dataBindHandler.removeAttr('data-id');
+        dataBindHandler.removeAttr('data-key');
+        dataBindHandler.removeAttr('contenteditable');
+        dataBindHandler.removeClass('press-data-bind-handler');
+        dataBindHandler.removeClass('press-data-bind-handler-selected');
+
+        var eventName = self.FORMSUBMIT + '.' + dataId + '.' + componentId;
+
+        webponent.press.event.off(eventName);
+
+        delete dataEventList[componentId];
+    };
+
+    /**
+     * [컴퍼넌트에 바인드 된 이벤트의 목록을 설정한다]
+     * @param  {[string]} componentId [component unique id]
+     * @param  {[string]} dataId [data unique id]
+     */
+    self.setComponentDataEventList = function (componentId, dataId) {
+
+        if (!componentId) {
+
+            return;
+        }
+
+        var componentType = componentId.split('-')[0];
+
+        if (!dataEventList[componentId]) {
+
+            dataEventList[componentId] = [];
+        }
+
+        // 텍스트, 이미지, 비디오 컴퍼넌트의 경우 바인드된 데이터의 갯수가 반드시 1개여야 하므로
+        // 이전에 바인드된 데이터를 제거한다.
+        if (componentType !== 'text' && componentType !== 'image' && componentType !== 'video' && componentType !== 'table') {
+            for (var i = 0; i < dataEventList[componentId].length; i++) {
+                var eventName = self.FORMSUBMIT + '.' + dataEventList[componentId][i] + '.' + componentId;
+                webponent.press.event.off(eventName);
+            }
+
+            dataEventList[componentId] = [];
+        }
+
+        if (dataEventList[componentId].indexOf(dataId) === -1) {
+
+            dataEventList[componentId].push(dataId);
+        }
+    };
+
+    /**
+     * [컴퍼넌트에 바인드 된 이벤트 목록을 가져온다]
+     * @param  {[string]} componentId [component unique id]
+     */
+    self.getComponentDataEventList = function (componentId) {
+
+        var list = dataEventList;
+
+        if (componentId) {
+
+            list = dataEventList[componentId];
+        }
+
+        return list;
+    };
+
+    /**
+     * [복사시 컴포넌트의 불필요한 부분을 제거한다]
+     * @param  {[node]} node 제거할 컴포넌트
+     */
+    self.cleanComponentMarkup = function (node) {
+
+        function removeInlineEditor (componentWrapper) {
+            if(componentWrapper.hasClass('respText')){
+                componentWrapper.css('font-size','');
+            }
+            componentWrapper.removeAttr('cke_instance')
+                .removeAttr('contenteditable')
+                .removeAttr('tabindex')
+                .removeAttr('spellcheck')
+                .removeAttr('role')
+                .removeAttr('aria-label')
+                .removeAttr('title')
+                .removeAttr('aria-describedby')
+                .removeClass('cke_editable cke_editable_inline cke_contents_ltr cke_show_borders cke_focus');
+        }
+
+        function removeDraggableEvent (wrapper) {
+            if (wrapper.hasClass('ui-sortable')) {
+
+                wrapper.removeClass('ui-sortable');
+                wrapper.removeData('uiDraggable');
+            }
+
+            if (wrapper.hasClass('ui-draggable')) {
+
+                wrapper.removeClass('ui-draggable');
+                wrapper.removeData('uiSortable');
+            }
+
+            var draggableWrappers = wrapper.find('.wpc.ui-draggable');
+
+            $.each(draggableWrappers, function (idx, value) {
+
+                $(value).removeClass('ui-draggable');
+                $(value).removeData('uiDraggable');
+            });
+
+
+            var sortableWrappers = wrapper.find('.ui-sortable');
+
+
+            $.each(sortableWrappers, function (idx, value) {
+
+                $(value).removeClass('ui-sortable');
+                $(value).removeData('uiSortable');
+            });
+        }
+
+        node.find('.wpe-droppable').removeClass('wpe-droppable');
+        node.removeClass('wpe-selected wpe-hovered');
+        node.find('.press-component-handler').remove();
+        //componentWrapper.find('.press-page-ruler-scroll-area').remove();
+        node.find('.cke_widget_drag_handler_container').remove();
+        node.find('.press-data-bind-handler-selected').removeClass('press-data-bind-handler-selected');
+
+        removeInlineEditor(node);
+
+        removeDraggableEvent(node);
+
+        /**
+         * 아래 소스 삭제하면
+         * Chart에서 컴퍼넌트 편집을 누르면 퍼블리셔에서
+         * SVG 자체를 복사해하여 넘김.
+         * 추가적용 (2016.01.21 평다진)
+         * 왜 뺏지????
+         */
+        node.children('[data-need-reset-markup]').each(function () {
+
+            var markup = $(this);
+
+            if (markup.data('original-markup')) {
+
+                markup.children().remove();
+
+                var originalMarkup = markup.data('original-markup').clone(true);
+
+                if (originalMarkup) {
+
+                    markup.append(originalMarkup);
+                }
+            }
+        });
+    };
+
+    /**
+     * [복사시 컴포넌트의 html을 반환]
+     * @param  {[node]} component 컴포넌트
+     */
+    self.getMarkup = function (component) {
+
+        var markup = component.find('> [data-componentid]');
+        if(markup.length>0) {
+            return markup;
+        }else {
+            return component.find('> :first-child');
+        }
+    };
+
+    self.editing  = function () {
+
+        if (webponent.press.interaction) {
+
+            return true;
+        } else {
+
+            return false;
+        }
+    };
+
+    $.fn.serializeObject = function() {
+
+        var o = Object.create(null),
+
+            elementMapper = function(element) {
+
+                element.name = $.camelCase(element.name);
+
+                return element;
+            },
+
+            appendToResult = function(i, element) {
+
+                var node = o[element.name];
+
+                if ('undefined' !== typeof node && node !== null) {
+
+                    o[element.name] = node.push ? node.push(element.value) : [node, element.value];
+
+                } else {
+
+                    o[element.name] = element.value;
+                }
+            };
+
+        $.each($.map(this.serializeArray(), elementMapper), appendToResult);
+
+        return o;
+    };
+
+    webponent.press.variables = variables;
+    webponent.press.functions = functions;
+    webponent.press.Dialog_cms = Dialog_cms;
+    webponent.press.Dialog_cms_mo = Dialog_cms_mo;
+
+    self.variables = variables;
+    self.functions = functions;
+
+    self.PRESS_HOME = PRESS_HOME;
+
+    self.libraries = {
+        js: {
+            common: [
+                '<script type="text/javascript" src="/webponent-press/external/head/head.js"></script>',
+                '<script type="text/javascript" src="/webponent-press/js/webponent.press.page.js"></script>'
+            ]
+        }
+    };
+
+    window.webponent.press.runtime = self;
+    Dialog_cms_mo.init();
+    
+    $(".biz_guide_txt, .biz_num_list, .biz_circle_num, .biz_zeronum_list").each(function(index, item){
+    	if($(item).eq(0).parent().next().children("ul").is(".biz_list_s, .biz_list_s_2, .biz_circle_num_small") &&
+        $(item).eq(0).parent().next().next().children("ul").is(".biz_guide_txt, .biz_num_list, .biz_circle_num, .biz_zeronum_list")){
+            $(item).eq(0).parent().next().children("ul").css("margin-bottom", "5px");
+        }
+    });
+    
+    setTimeout(function(){
+	    
+    }, 1000);
+
+	setTimeout(function(){
+		// 모바일 툴팁버튼 text삽입
+	    $('.mo_biz_tooltip_close > a > span').text('자세한 내용 닫기');
+	    $('.mo_biz_tooltip_btn > a > span').text('자세한 내용 확인');
+	    
+	    // 툴팁은 처음부터 말풍선이 보이지 않음
+	    var tooltip_open_txt = "말풍선열기";
+		var tooltip_close_txt = "말풍선닫기";
+	    if($("html").attr("lang") == "en"){
+			tooltip_open_txt = "Open Description";
+			tooltip_close_txt = "Close Description";
+		}
+	    $('.biz_tooltip_close > a > span').text(tooltip_close_txt);
+		$('.biz_tooltip_btn > a > span').text(tooltip_open_txt);                    	
+		$('.biz_tooltip_btn').on('click', function() {
+			if ($(this).children().eq(1).children().eq(0).css('display') == 'none') {
+	    		$(this).children().eq(0).children().eq(0).text(tooltip_open_txt);
+			} else if ($(this).children().eq(1).children().eq(0).css('display') == 'block') {
+				$(this).children().eq(0).children().eq(0).text(tooltip_close_txt);
+	    	}	
+		});
+		
+		$(".mo_biz_tooltip_info").parent().css("display","none");
+	    $(".mo_biz_tooltip_info").parent().removeClass("hidden-component");
+	    $(".mo_biz_tooltip_info").parent().parent().removeClass("hidden-component");
+	    $(".biz_tooltip_info").parent().parent().parent().hide();
+	    
+		$(".biz_tooltip_panel").removeClass("hidden-component");
+		$(".biz_tooltip_panel_top").removeClass("hidden-component");
+		$(".biz_tooltip_panel").parent().parent().removeClass("hidden-component");
+		$(".biz_tooltip_close").on("click", function(){
+			$(this).parent().parent().parent().parent().parent().hide();
+		});
+		$("[data-cke-pa-onclick]").each(function(index,item){
+			$(this).attr("onclick",$(this).attr("data-cke-pa-onclick"));
+		});
+		
+		
+		$(".wpc-attach-file").find("a").each(function(index, item){
+	    	// 첨부파일 target="_blank"에 title="새창 열림" 추가
+	    	if($(item).attr("target") == "_blank"){
+	    		$(item).attr("title","새창 열림");
+	    	}
+	    	
+	    	//모바일앱 첨부파일 다운로드 모듈 변경
+	    	if($(item).attr("href") != "#" && _isDevice == "A"){
+	    		var fileFullPath = $(item).attr("href");
+	    		var split_s = fileFullPath.split("/");
+	    		var split_p = fileFullPath.split(".");
+	    		var fileName = split_s[split_s.length - 1];
+	    		var path = fileFullPath.substring(0, fileFullPath.length - split_s[split_s.length - 1].length);
+	    		var ext = split_p[split_p.length - 1];
+	    		
+	    		$(item).attr("href","#");
+	    		$(item).attr("onclick","commFileDown('"+fileName+"', '"+ext+"', '"+path+"');");
+	    	}
+	    });
+		
+		//앱인경우 새창띄우는 a링크 웹페이지로 이동하게 처리
+		if(_isDevice == "A"){
+			$("a[target=_blank]").each(function(index, item){
+				if($(item).attr("href") != "#"){
+					var ex = $(item).attr("href").split(".")[$(item).attr("href").split(".").length-1];
+					var comp_ex = ["doc","xls","docx","xlsx","pdf","ppt","pptx","txt","word","zip","mp4","wmv","exe"];
+					var isComp = false;
+					for(var i in comp_ex.length){
+						comp_ex[i] == ex ? isComp = true : "";
+					}
+					if(isComp != true){
+						// 첨부파일 target="_blank"에 title="새창 열림" 추가
+						if($(item).attr("title") == ""){
+							$(item).attr("title","새창 열림");
+						}
+						var goWeb = $(item).attr("href");
+						$(item).attr("href","#");
+						if(goWeb.indexOf("/") == 0){
+					    	$(item).attr("onclick","exWNExtPopup('"+_pcDomain+goWeb+"');");
+						}else{
+							$(item).attr("onclick","exWNExtPopup('"+goWeb+"');");
+						}
+					}
+				}
+		    });
+		}
+		
+		$(".tab-selector").each(function(index, item){
+			var itemCnt = $(item).children().length;
+			var selectItem = $(item).find('.ci-tab-active').index();
+	        var moveWid = 0;
+	        var $activeText = '현재선택';
+		    if($('html').attr('lang') == 'en')$activeText = 'Activation Menu';
+	        $(item).find('.ci-tab-active').find('a').attr('title',$activeText);
+	        
+			for(var i = 0 ; i < selectItem ; i++){
+				if(i == (selectItem-1)){
+					moveWid += ($(item).children().eq(i).outerWidth()/2);
+				}else{
+					moveWid += $(item).children().eq(i).outerWidth();
+				}
+			}
+			$(item).scrollLeft(moveWid);
+			
+			$(item).find('.tab-item').each(function(){
+				var $link = $(this).find('a'),
+					$href = $link.attr('href');
+				if($href == '' || $href == undefined)$link.attr('href','#');
+			});
+			
+			$(item).find(".tab-item > a").on("click", function(){
+				var $tabSelector = $(this).parent().parent();
+				var tabItemCnt = $tabSelector.children().length;
+				var tabSelectItem = $(this).parent().index();
+				var tabMoveWid = 0;
+				for(var i = 0 ; i < tabSelectItem ; i++){
+					if(i == (tabSelectItem-1)){
+						tabMoveWid += ($tabSelector.children().eq(i).outerWidth()/2);
+					}else{
+						tabMoveWid += $tabSelector.children().eq(i).outerWidth();
+					}
+				}
+				$tabSelector.scrollLeft(tabMoveWid);
+			});
+		});
+	}, 1000);
+	
+    
+	$(".wp-content").attr('style','background-color : rgba(255, 255, 255,0) !important;');
+	
+//    $(".wp-content").find("a.press-button").on("click", function(){
+//    	Loading.open();
+//    });
+	
+	$(".biz_banner_area").each(function(index, item){
+		if($(item).children().children().hasClass("layout_2_mid")){ 
+			$(item).attr("tabindex","0");
+			$(item).on("keydown", function(e){
+				if(e.keyCode == 13){$(item).trigger("click");}
+	        });
+			if($(item).attr("onclick") != undefined){$(item).attr("title","새창열림");}
+		}
+	});
+	
+	$(".biz_tooltip_close > a").on("click",function(){
+		$(this).parent().parent().parent().parent().parent().parent().parent().parent().children().eq(0).focus();
+	});
+	
+	//scroll check
+	$.fn.hasScrollBar = function() {
+		return (this.prop("scrollHeight") == 0 && this.prop("clientHeight") == 0)
+				|| (this.prop("scrollHeight") > this.prop("clientHeight"));
+	};
+})(jQuery);
+
+/**
+ *
+ * webponent press 코어라이브러리 component
+ *
+ * 컴퍼넌트 로드, 관리에 관한 로직들
+ *
+ * component.html 내 Object 저장
+ *
+ */
+
+(function ($) {
+    "use strict";
+
+    var self = {};
+
+    var isDeployed = webponent.press.setting === undefined;
+
+
+    /**
+     * 페이징 컴퍼넌트
+     * @param markup
+     * @param setting
+     */
+    self.board_pageComponentScript = function (markup, setting) {
+        markup.find('.press-board-page > li > a').off('click').on('click', function (e) {
+            e.preventDefault();
+            var page = $(this).attr('data-pagenum');
+            if (!page) {
+                return;
+            }
+
+            var $f = $(this).closest('FORM');
+
+            var paramName = setting.pageParamName || 'curPage';
+
+            markup.find('.page-num-value').attr('name', paramName).val(page);
+
+            if ($f.length == 0) {
+                return;
+            }
+
+            if(location.href.indexOf('/WEB-APP/webponent-press') > -1) {
+                console.log('서버데이터 적용이 되지 않아 페이지 이동이 불가합니다.');
+                return;
+            }
+
+            $f.submit();
+
+        });
+    };
+
+    /**
+     * iframe 컴퍼넌트
+     */
+    self.iframeComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 탭 컴퍼넌트
+     */
+    self.tabComponentScript = function(markup, setting){
+        var tabMarkup = markup.find(".ci-tab:eq(0)");
+
+        var option = {
+
+            panelOpen : function (e, s, p) {
+
+                p.find('.wpc').each(function () {
+
+                    var componentWrapper = $(this);
+
+                    webponent.press.runtime.runComponent(componentWrapper, webponent.press.runtime.editing());
+                });
+            }
+        };
+
+        webponent.tab.init(tabMarkup, option);
+    };
+
+    self.resp_tabComponentScript = function(markup, setting){
+
+    };
+
+
+    /**
+     * 리스트 컴퍼넌트
+     */
+    self.listComponentScript = function(markup, setting){
+        //empty
+    };
+
+    /**
+     * 1단 레이아웃 컴퍼넌트
+     */
+    self.layout_1ComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 2단 레이아웃 컴퍼넌트
+     */
+    self.layout_2ComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 3단 레이아웃 컴퍼넌트
+     */
+    self.layout_3ComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 4단 레이아웃 컴퍼넌트
+     */
+    self.layout_4ComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * bx_slider 컴포넌트
+     */
+    self.bxSliderComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * accordion 컴포넌트
+     */
+    self.accordionComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * PDF 레이아웃 컴퍼넌트
+     */
+    self.layout_pdfComponentScript = function(markup) {
+        markup.parent().css('margin', '0');
+        markup.find('.press-layout-component-pdf-header').css('padding', '1px');
+        markup.find('.press-layout-component-pdf-footer').css('padding', '1px');
+    };
+
+    /**
+     * 텍스트 컴퍼넌트
+     */
+    self.textComponentScript = function(markup, setting){
+
+        var componentId = markup.attr('data-componentId');
+
+        if(isDeployed) {
+            markup.removeClass('placeholder');
+        }
+
+        if (setting.data) {
+
+            _.each(setting.data, function (dataInfo, key) {
+
+                dataInfo.isSearch = false;
+
+                webponent.press.runtime.getComponentData(dataInfo, function (data) {
+
+                    var bindSpan = markup.find('.press-data-bind-handler[data-id="' + dataInfo.uniqueId + '"]');
+
+                    _.each(bindSpan, function (value, key) {
+
+                        var dataKey = $(value).attr('data-key');
+                        var resetData = null;
+
+                        if (dataKey[0] === '[') {
+
+                            resetData = eval('data' + dataKey);
+
+                        } else {
+
+                            resetData = eval('data.' + dataKey);
+                        }
+
+                        $(value).html(resetData);
+                    });
+                }, null, componentId);
+            });
+        }
+
+        if (window.RespText && RespText.isResponsive(markup)) {
+            RespText.adjustSize(markup);
+        }
+
+        // ck-editor 인식, 관련 태그 제거
+        markup.removeClass('cke_editable cke_editable_inline cke_contents_ltr cke_show_borders')
+            .removeAttr('tabindex role spellcheck aria-label aria-describedby contenteditable title');
+    };
+
+    /**
+     * H1 컴퍼넌트
+     */
+    self.h1ComponentScript = function(markup, setting){
+        self.textComponentScript(markup, setting);
+    };
+
+    /**
+     * H2 컴퍼넌트
+     */
+    self.h2ComponentScript = function(markup, setting){
+        self.textComponentScript(markup, setting);
+    };
+
+    /**
+     * H3 컴퍼넌트
+     */
+    self.h3ComponentScript = function(markup, setting){
+        self.textComponentScript(markup, setting);
+    };
+
+    /**
+     * H4 컴퍼넌트
+     */
+    self.h4ComponentScript = function(markup, setting){
+        self.textComponentScript(markup, setting);	};
+
+    /**
+     * H5 컴퍼넌트
+     */
+    self.h5ComponentScript = function(markup, setting){
+        self.textComponentScript(markup, setting);
+    };
+
+    /**
+     * 코딩 컴퍼넌트
+     */
+    self.codingComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 이미지 컴퍼넌트
+     */
+    self.imageComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+
+        if (setting.data) {
+
+            _.each(setting.data, function (dataInfo, key) {
+
+                dataInfo.isSearch = false;
+
+                webponent.press.runtime.getComponentData(dataInfo, function (data) {
+
+                    var bindSpan = markup.find('.press-data-bind-handler[data-id="' + dataInfo.uniqueId + '"]');
+
+                    _.each(bindSpan, function (value, key) {
+
+                        var dataKey = $(value).attr('data-key');
+
+                        var resetData = null;
+
+                        if (dataKey[0] === '[') {
+
+                            resetData = eval('data' + dataKey);
+
+                        } else {
+
+                            resetData = eval('data.' + dataKey);
+                        }
+
+                        $(value).html(resetData);
+                    });
+                }, null, componentId);
+            });
+        }
+    };
+
+    /**
+     * 비디오 컴퍼넌트
+     */
+    self.videoComponentScript = function(markup, setting){
+        var player = markup.find('.press-video-comp');
+        var divIfrm = markup.find('.press-video-ifrm');
+
+        if (setting.video.useDirect) {
+            divIfrm.show();
+            player.hide();
+
+            divIfrm.html(setting.video.directSource);
+
+            var ifrm = divIfrm.find('iframe');
+
+            divIfrm.attr({
+                width: ifrm.attr('width'),
+                height: ifrm.attr('height')
+            });
+
+            $( window ).resize(function() {
+                if( divIfrm.css('display') == 'none'){
+                    return;
+                }
+                var parentWidth =markup.find('.wpc-video').width();
+
+                if(parentWidth  <=  setting.video.width  ){
+                    divIfrm.css({
+                        width: parentWidth});
+                }else{
+                    divIfrm.css({
+                        width: setting.video.width,
+                        height: '100%'});
+                }
+            });
+
+
+            player.find('.mejs-volume-current').css('height', 0);
+
+        } else {
+
+            divIfrm.hide();
+            player.show();
+
+            var html = '<video width="' +setting.video.width+ '" height="'+setting.video.height+'" style="width: 100%; height: 100%;" preload="none">'
+                +'	<source type="'+setting.video.mimeType+'" src="'+setting.video.videoURL+'" />'
+                +'	<object style="width:100%;height:100%;" type="application/x-shockwave-flash" data="/WEB-APP/webponent-press1.0/external/mediaelement/flashmediaelement.swf">'
+                +'		<param name="movie" value="/WEB-APP/webponent-press1.0/external/mediaelement/flashmediaelement.swf" />'
+                +'		<param name="flashvars" value="controls=true&amp;file='+setting.video.videoURL+'" />'
+                +'	</object>'
+                +'</video>';
+            player.html(html);
+
+
+            player.closest('.press-video-comp').css('width',setting.video.width);
+            player.find('video').mediaelementplayer({});
+            player.find('.mejs-container').css({
+                'width': setting.video.width,
+                'height': setting.video.height
+            });
+            player.find('video').removeAttr('poster').attr('poster', setting.video.poster);
+            player.find('.mejs-volume-current').css('height', 0);
+
+            $( window ).resize(function() {
+                var videoComp = markup.find('.wpc-video');
+                var videoObj =  player.find('.mejs-container');
+                if( videoComp.css('display') == 'none'){
+                    return;
+                }
+
+                var parentWidth = videoComp.width();
+
+                if(parentWidth  <=  setting.video.width  ){
+                    var newHeight = setting.video.height / setting.video.width * videoObj.width()+ 'px';
+                    videoObj.css('height',newHeight);
+                    videoObj.parent().css('height',newHeight);
+                    videoComp.addClass('resizable');
+                    player.find('mejs-overlay-play').css('height',newHeight);
+                }else{
+                    videoObj.css('height', setting.video.height);
+                    videoObj.parent().css('height', setting.video.height);
+                    videoComp.css(setting.video.height);
+                    videoComp.removeClass('resizable').css(setting.video.height);
+                    player.find('mejs-overlay-play').css('height', setting.video.height);
+                }
+            });
+        }
+
+        var componentId = markup.attr('data-componentId');
+
+        if (setting.data) {
+
+            _.each(setting.data, function (dataInfo, key) {
+
+                dataInfo.isSearch = false;
+
+                webponent.press.runtime.getComponentData(dataInfo, function (data) {
+
+                    var bindSpan = markup.find('.press-data-bind-handler[data-id="' + dataInfo.uniqueId + '"]');
+
+                    _.each(bindSpan, function (value, key) {
+
+                        var dataKey = $(value).attr('data-key');
+
+                        var resetData = null;
+
+                        if (dataKey[0] === '[') {
+
+                            resetData = eval('data' + dataKey);
+
+                        } else {
+
+                            resetData = eval('data.' + dataKey);
+                        }
+
+                        $(value).html(resetData);
+                    });
+                }, null, componentId);
+            });
+        }
+    };
+
+    /**
+     * 비디오팝업 컴퍼넌트
+     */
+    self.videopComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+
+        var thumbLink = markup.find('.press-video-thumbnail');
+
+        //var player = markup.find('.press-video-comp');
+
+        var videoWidth = setting.video.width;
+        var videoHeight = setting.video.height;
+
+        try {
+            if(WEBPONENT_PRESS_DEVICE_TYPE === 'mobile') {
+                videoWidth = $(window).width();
+            }
+        } catch(e) { }
+
+        thumbLink.on('click', function(e) {
+
+            e.preventDefault();
+
+            if(!isDeployed) {
+                return;
+            }
+
+            var videoWrapper = $('<div>');
+            videoWrapper.addClass('video-wrapper');
+
+
+            if(setting.setting.type === 'none') {
+                $(this).removeAttr('data-video-id');
+                var html = '<div class="video-container"><video width="'+videoWidth+'" height="'+videoHeight+'" preload="none">'
+                    +'	<source type="'+setting.video.mimeType+'" src="'+setting.video.videoURL+'" />'
+                    +'	<object width="'+videoWidth+'" height="'+videoHeight+'" type="application/x-shockwave-flash" data="external/mediaelement/flashmediaelement.swf">'
+                    +'		<param name="movie" value="external/mediaelement/flashmediaelement.swf" />'
+                    +'		<param name="flashvars" value="controls=true&amp;file='+setting.video.videoURL+'" />'
+                    +'	</object>'
+                    +'</video></div>';
+                videoWrapper.html(html);
+
+                videoWrapper.find('audio, video').mediaelementplayer({});
+
+                markup.find('.wpc-videop').append(videoWrapper);
+
+                videoWrapper.off('click').on('click', function(e) {
+                    if(e.target.className === 'video-wrapper'){
+                        $('.wpc-videop').find('video')[0].pause();
+                        $(this).hide();
+                    }
+                });
+
+
+            } else {
+
+                $(this).attr('data-video-id', setting.video.videoURL);
+
+            }
+
+        });
+
+        if(setting.setting.type === 'youtube') {
+            thumbLink.jqueryVideoLightning({
+                id: setting.video.videoURL,
+                autoplay: 1,
+                backdrop_color: "#fff",
+                backdrop_opacity: 0.7,
+                glow: 20,
+                glow_color: "#000",
+                width: videoWidth,
+                height: videoHeight
+            });
+        }
+
+        if (setting.data) {
+
+            _.each(setting.data, function (dataInfo, key) {
+
+                dataInfo.isSearch = false;
+
+                webponent.press.runtime.getComponentData(dataInfo, function (data) {
+
+                    var bindSpan = markup.find('.press-data-bind-handler[data-id="' + dataInfo.uniqueId + '"]');
+
+                    _.each(bindSpan, function (value, key) {
+
+                        var dataKey = $(value).attr('data-key');
+
+                        var resetData = null;
+
+                        if (dataKey[0] === '[') {
+
+                            resetData = eval('data' + dataKey);
+
+                        } else {
+
+                            resetData = eval('data.' + dataKey);
+                        }
+
+                        $(value).html(resetData);
+                    });
+                }, null, componentId);
+            });
+        }
+    };
+
+    /**
+     * 버튼 컴퍼넌트
+     */
+    self.buttonComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 폼 컴퍼넌트
+     */
+    self.formComponentScript = function(markup, setting){
+        var form = markup.find('.press-form');
+        //var submitButton = markup.find('.submit-button');
+
+        form.off('submit');
+        form.on('submit', function (e) {
+
+
+            if (setting.data) {
+                e.preventDefault();
+                var ajaxOption = {};
+
+                ajaxOption.data = form.serializeObject();
+
+                setting.data.isSearch = true;
+                setting.data.serialize = ajaxOption.data;
+
+                var eventName = webponent.press.runtime.FORMSUBMIT + '.' + setting.data.uniqueId;
+
+                webponent.press.runtime.getData(setting.data, function (data) {
+
+                    var pageSetting = webponent.press.runtime.getPageSetting();
+
+                    pageSetting.data[setting.data.uniqueId] = setting.data;
+
+                    if (webponent.press.interaction) {
+
+                        webponent.press.interaction.storeSetting($('.press-preview'), pageSetting);
+
+                        webponent.press.interaction.searchDataPanelTableJson(setting.data);
+                    }
+
+                    webponent.press.event.trigger(eventName, [data]);
+
+                }, ajaxOption);
+            }
+        });
+    };
+
+    /**
+     * 텍스트(폼) 컴퍼넌트
+     */
+    self.input_textComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 셀렉트(폼) 컴퍼넌트
+     */
+    self.selectboxComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 체크박스(폼) 컴퍼넌트
+     */
+    self.checkboxComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 라디오(폼) 컴퍼넌트
+     */
+    self.radioComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * Submit(폼) 컴퍼넌트
+     */
+    self.submit_btnComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 테이블 컴퍼넌트
+     */
+    self.tableComponentScript = function(markup, setting){
+
+        var componentId = markup.data('componentid');
+
+        var tableComponentWrapper = markup;
+        var tableComponent = tableComponentWrapper.children('.press-table-comp');
+        if(tableComponent.length === 0){
+            markup.remove();
+            return false;
+        }
+
+        if (setting.data) {
+            /*ing용*/if(setting.data == "null"){return;}
+
+            _.each(setting.data, function (dataInfo, key) {
+
+                webponent.press.runtime.getComponentData(dataInfo, function (data, eventName) {
+
+                    var isInitialize = tableComponent.attr('isInitialize') === 'true' ? true : false;
+
+                    // tr 갯수가 달라지는 테이블
+                    if(setting.isDynamicTr){
+                        if(isInitialize === true) {
+                            tableComponent.attr('isInitialize', false);
+                            return;
+                        }
+
+                        var dataKey = _.has(dataInfo, 'dataKey') ? data[dataInfo.dataKey] : data;
+                        var tableNode = $(buildTable(dataKey, undefined, dataInfo));
+                        var prevColgroup = tableComponent.children('colgroup').html();
+
+                        tableComponent = webponent.press.table.createTableOpen('component', tableComponentWrapper, tableNode, {info: dataInfo}, null, setting);
+
+                        var tableComponentFind = tableComponent.children('colgroup');
+                        tableComponentFind.children().remove();
+                        tableComponentFind.append(prevColgroup);
+                        tableComponent.addClass('press-table-comp');
+
+                        tableComponentWrapper.children().remove();
+                        tableComponentWrapper.append(tableComponent);
+
+                    } else {
+                        // 데이터만 변경되는 테이블
+                        // tr의 갯수는 변함없음.
+                        var bindSpan = markup.find('.press-data-bind-handler[data-id="' + dataInfo.uniqueId + '"]').filter(function(index, element) {
+
+                            return !$(this).closest('th').hasClass('td_head');
+                        });
+                        _.each(bindSpan, function (value, key) {
+
+                            var dataKey = $(value).attr('data-key');
+
+                            var resetData = null;
+
+                            if (dataKey[0] === '[' && !_.has(dataInfo, 'dataKey')) {
+
+                                resetData = eval('data' + dataKey);
+
+                            } else {
+                                if(dataKey[0] === '[' && _.has(dataInfo, 'dataKey')) {
+                                    dataKey = dataInfo.dataKey + dataKey;
+                                }
+                                resetData = eval('data.' + dataKey);
+
+                                if(dataKey.indexOf('.') > -1){
+                                    resetData = eval('data.' + dataKey.replace(".","['") +"']" );
+                                }else{
+                                    resetData = eval('data.' + dataKey);
+                                }
+                            }
+
+                            $(value).html(resetData);
+                        });
+                    }
+
+                }, null, componentId);
+            })
+        }
+
+        var $wrapper = $(markup);
+        // mobile
+        if($('.wp-content').width() < 416){
+            if(setting.mobile.type !== '#typeNone') {
+                if(setting.origincol.replace(/[^0-9]/g,"") !== tableComponent.children('colgroup').html().replace(/[^0-9]/g,"")) {
+                    webponent.press.table.revertTableType($wrapper, true);
+                }
+                webponent.press.table.init($wrapper, setting);
+                tableComponent.children('colgroup').html(setting.mobileColWidth);
+            }else{
+                if(setting.origincol !== tableComponent.children('colgroup').html()) {
+                	try{
+                    webponent.press.table.init(markup, setting);
+                    tableComponent.children('colgroup').html(setting.origincol);
+                	}catch(e){}
+                }
+            }
+
+        }else{
+            if(!setting.origincol){
+                setting.origincol = tableComponent.children('colgroup').html().replace(/(\r\n|\n|\r| )/gm,"").replace(/col/g, 'col ');
+            }
+
+            if(setting.origincol.replace(/[^0-9]/g,"") !== tableComponent.children('colgroup').html().replace(/[^0-9]/g,"")) {
+                webponent.press.table.revertTableType($wrapper, true);
+            }
+            tableComponent.children('colgroup').html(setting.origincol);
+
+        }
+    };
+
+    /**
+     * 첨부파일 컴퍼넌트
+     */
+    self.attach_fileComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * 그리드 컴퍼넌트
+     */
+    self.gridComponentScript = function(markup, setting){
+        var table = markup.find('.grid-table');
+        var template = markup.find('.grid-template');
+
+        var option = {
+            sortable : setting.sortable,
+            resizable : setting.resizable,
+            boostLoad : setting.boostLoad
+        };
+
+        if (setting.paging) {
+
+            option.paging = {
+
+                countPerPage : 10,
+                paginationCount : 5,
+                freezeScrollerY : 'hide'
+            }
+        }
+
+        var grid = webponent.grid.init(table, template, option);
+
+        if (setting.paging) {
+
+            grid.makePageList();
+        }
+
+        if (setting.columnSettingPlugin ||
+            setting.columnFilteringPlugin ||
+            setting.columnGroupInfo.length > 0) {
+
+            var uiPluginOption =  {
+
+                settingUI : setting.columnSettingPlugin,
+                filteringUI : setting.columnFilteringPlugin
+            };
+
+            if (setting.columnGroupPluginMobileOnly) {
+
+                if (window.innerWidth <= 500) {
+
+                    if (setting.columnGroupInfo.length > 0) {
+
+                        var group = setting.columnGroupInfo;
+
+                        grid.groupColumns(group);
+
+                        uiPluginOption.groupingUI = true;
+                    }
+                }
+            } else {
+
+                if (setting.columnGroupInfo.length > 0) {
+
+                    var group = setting.columnGroupInfo;
+
+                    grid.groupColumns(group);
+
+                    uiPluginOption.groupingUI = true;
+                }
+            }
+
+            webponent.grid.UIplugin.init(grid, uiPluginOption);
+        }
+
+        grid.on('rowAppended', function () {
+
+            if (setting.releaseScroll) {
+
+                grid.releaseScroll();
+            }
+        });
+
+        var hasFormatColumn = _.filter(setting.columnInfo, function (column) {
+
+            return column.format;
+        });
+
+        if (hasFormatColumn.length > 0) {
+
+            grid.on('rowRendered', function (e, row, data, index) {
+
+                _.each(hasFormatColumn, function (column) {
+
+                    var columnName = column.columnName;
+                    var functionName = column.format.functionName;
+                    var parameterNames = column.format.parameters;
+
+                    var parameters = [];
+
+                    _.each(parameterNames, function (parameter) {
+
+                        parameters.push(data[parameter]);
+                    });
+
+                    var td = $(row).find('[data-name="' + columnName + '"]');
+
+                    var formatted = webponent.press.functions[functionName].run.apply(null, parameters);
+
+                    td.html(formatted);
+                });
+            });
+        }
+
+        var componentId = markup.attr('data-componentId');
+
+        if (!setting.data) {
+
+            grid.appendRow(setting.sampleData);
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                grid.removeRow();
+
+                grid.appendRow(data);
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * 차트 컴퍼넌트
+     */
+    self.chartComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+
+        /* 181120. null 스트링 오류 방지  */
+        setting.option = JSON.parse(JSON.stringify(setting.option).replaceAll('"null"','null'));
+        setting.style = JSON.parse(JSON.stringify(setting.style).replaceAll('"null"','null'));
+        setting.series = JSON.parse(JSON.stringify(setting.series).replaceAll('"null"','null'));
+
+        function createChart(data, type){
+
+            setTimeout(function(){
+
+                var wrapper = markup.find('.component-chart-wrapper');
+
+                wrapper.css('width', '100%');
+                wrapper.css('height', setting.style.height + 'px');
+
+                var options = {
+                    data: {
+                        data: data
+                    },
+                    use : {
+                        reSize: true
+                    }
+                };
+
+                options = $.extend(true, options, setting.option);
+
+                var styles = $.extend(true, {}, setting.style);
+
+                var series = $.extend(true, {}, setting.series);
+
+                wrapper.children().remove();
+
+                wrapper.chart = webponent.chart.init(wrapper, options, styles, series);
+            }, 0);
+        }
+
+        if(!setting.style.main.hasOwnProperty('series')) {
+            // 첫 로딩시 시리즈 없을때 강제로 추가.
+            var series = {};
+            $.each(setting.series.main, function(key, value){
+                series[key] = $.extend(true, {}, setting.style.series);
+            });
+            setting.style.main.series = series;
+        }
+
+        if (!setting.data) {
+
+            createChart(setting.sampleData);
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                if (setting.data.mode === 'form') {
+
+                    createChart(data[setting.data.key]);
+
+                } else {
+
+                    createChart(data);
+                }
+            }, null, componentId);
+            webponent.press.runtime.getData(setting.data, function (data) {
+
+
+                createChart(data, 'none');
+            });
+        }
+    };
+
+    /**
+     * Pie 컴퍼넌트
+     */
+    self.pieComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function initPie () {
+            // Number 1,000
+            function format_num1 (value) {
+
+                if (value === 0) {
+                    return 0;
+                }
+
+                var reg = /(^[+-]?\d+)(\d{3})/;
+                var n = (value + '');
+
+                while (reg.test(n)) {
+                    n = n.replace(reg, '$1' + ',' + '$2');
+                }
+
+                return n;
+            }
+
+            function getOptions () {
+
+                var formatValue = null;
+
+                if (setting.option.legend.format.use) {
+
+                    formatValue = setting.option.legend.format.value.split(",");
+
+                    var formatValueArr = [];
+
+                    for (var i = 0; i < formatValue.length; i++) {
+
+                        formatValue[i] = formatValue[i].replace(/(^\s*)|(\s*$)/gi, "");
+
+                        formatValueArr.push(formatValue[i]);
+                    }
+
+                } else {
+
+                    formatValue = null;
+                }
+
+                var setTooltipFormat = {
+
+                    percent: function (pie, data, tipElement) {
+
+                        var dataTotalValue = pie.settings.data.dataTotalValue;
+                        var value = data[setting.option.data.use];
+                        var average = Math.round(100 / dataTotalValue * value);
+                        var span = '<span>' + average + '%</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    data: function (pie, data, tipElement) {
+
+                        var value = data[setting.option.data.use];
+                        var span = '<span>' + format_num1(value) + '</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    legend_data: function (pie, data, tipElement) {
+
+                        var value = data[setting.option.data.use];
+                        var legend = data[setting.option.legend.use];
+                        var span = '<span>' + legend + ' : ' + format_num1(value) + '</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    legend_percent: function (pie, data, tipElement) {
+
+                        var dataTotalValue = pie.settings.data.dataTotalValue;
+                        var value = data[setting.option.data.use];
+                        var average = Math.round(100 / dataTotalValue * value);
+                        var legend = data[setting.option.legend.use];
+                        var span = '<span>' + legend + ' : ' + average + '%</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    legend_data_percent: function (pie, data, tipElement) {
+
+                        var dataTotalValue = pie.settings.data.dataTotalValue;
+                        var value = data[setting.option.data.use];
+                        var average = Math.round(100 / dataTotalValue * value);
+                        var legend = data[setting.option.legend.use];
+                        var span = '<span>' + legend + ' : ' + format_num1(value) + ' (' + average + '%)</span>';
+
+                        tipElement.html(span);
+                    }
+                };
+
+                var options = {
+                    data: {
+                        data : settingData,
+                        use : setting.option.data.use,
+                        reverse : setting.option.data.reverse
+                    },
+                    legend : {
+                        use : setting.option.legend.use,
+                        format : formatValue
+                    },
+                    toolTip : {
+                        use : setting.option.toolTip.use,
+                        func : function (pie, data, tipElement) {
+
+                            var key = setting.option.toolTip.func;
+
+                            setTooltipFormat[key](pie, data, tipElement);
+                        }
+                    },
+                    resize : {
+                        use : setting.option.resize.use
+                    }
+                };
+
+                return options;
+            }
+
+            function setStyles () {
+
+                if (setting.style.layout.area.color === "Not Specified") {
+
+                    setting.style.layout.area.opacity = 0;
+
+                } else {
+
+                    setting.style.layout.area.opacity = 1;
+                }
+
+                setting.style.legend.pin = {
+                    color : setting.style.legend.form.color,
+                    length : setting.style.legend.form.size
+                };
+
+                setting.style.legend.pinHead = {
+                    size : setting.style.legend.form.size / 4,
+                    area : {
+                        color : setting.style.legend.form.color
+                    },
+                    line : {
+                        color : setting.style.legend.form.color
+                    },
+                    length : setting.style.legend.form.size,
+                    color : setting.style.legend.form.color
+                };
+            }
+
+            var options = getOptions();
+
+            setStyles();
+
+            var wrapper = $('.component-pie-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.pie = webponent.visual.pie.init(wrapper, setting.style, options);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initPie();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data, eventName) {
+
+                settingData = data;
+
+                initPie();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Scatter 컴퍼넌트
+     */
+    self.scatterComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function initScatterPlot () {
+            function getOptions () {
+
+                var options = $.extend(true, {}, setting.option);
+
+                options.data.data = settingData;
+
+                if (options.toolTip.use) {
+
+                    options.toolTip.func = function (data, tipElement) {
+
+                        var infoText = '';
+
+                        _.each(setting.option.toolTip.dataArray, function (infoObj, i) {
+
+                            infoText += "<span class='info-label'>" + infoObj.label + "</span>";
+                            infoText += "<span class='info-data'>" + data[infoObj.data] + "</span>";
+
+                            if (i < setting.option.toolTip.dataArray.length - 1) {
+
+                                infoText += "<br />";
+                            }
+                        });
+
+                        tipElement.html(infoText);
+                    }
+                }
+
+                return options;
+            }
+
+            function getStyles () {
+
+                var styles = $.extend(true, {}, setting.style);
+
+                if (styles.layout.area.color === "Not Specified") {
+
+                    styles.layout.area.opacity = 0;
+
+                } else {
+
+                    styles.layout.area.opacity = 1;
+                }
+
+                return styles;
+            }
+
+            var options = getOptions();
+            var styles = getStyles();
+
+            var wrapper = $('.component-scatter-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.scatter = webponent.visual.scatterPlot.init(wrapper, styles, options);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initScatterPlot();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initScatterPlot();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Horizon 컴퍼넌트
+     */
+    self.horizonComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function initHorizonChart () {
+            function getOptions () {
+
+                var options = $.extend(true, {}, setting.option);
+
+                options.data.data = settingData;
+
+                if (options.toolTip.use) {
+
+                    options.toolTip.func = function (data, tipElement) {
+
+                        var infoText = '';
+
+                        _.each(setting.option.toolTip.dataArray, function (infoObj, i) {
+
+                            infoText += "<span class='info-label'>" + infoObj.label + "</span>";
+                            infoText += "<span class='info-data'>" + data[infoObj.data] + "</span>";
+
+                            if (i < setting.option.toolTip.dataArray.length - 1) {
+
+                                infoText += "<br />";
+                            }
+                        });
+
+                        tipElement.html(infoText);
+                    }
+                }
+
+                return options;
+            }
+
+            function getStyles () {
+
+                var styles = $.extend(true, {}, setting.style);
+
+                if (styles.layout.area.color === "Not Specified") {
+
+                    styles.layout.area.opacity = 0;
+
+                } else {
+
+                    styles.layout.area.opacity = 1;
+                }
+
+                return styles;
+            }
+
+            var options = getOptions();
+            var styles = getStyles();
+
+            var wrapper = $('.component-horizon-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.horizon = webponent.visual.horizon.init(wrapper, styles, options);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initHorizonChart();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initHorizonChart();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Treemap 컴퍼넌트
+     */
+    self.treemapComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+
+        markup.find(".wpc-treemap").addClass(setting.theme);
+
+        var settingData = null;
+
+        function initTreeMap () {
+            function getOptions () {
+
+                var options = $.extend(true, {}, setting.option);
+
+                options.data.data = settingData;
+
+                var informationWrapper = markup.find(".component-treemap-information");
+
+                if (setting.option.information.use) {
+
+                    informationWrapper.show();
+
+                    options.mousemove = function (data) {
+
+                        var infoText = '';
+
+                        _.each(setting.option.information.dataArray, function (infoObj, i) {
+
+                            infoText += "<span class='info-label'>" + infoObj.label + "</span>";
+                            infoText += "<span class='info-data'>" + data[infoObj.data] + "</span>";
+
+                            if (i < setting.option.information.dataArray.length - 1) {
+
+                                infoText += "|";
+                            }
+                        });
+
+                        informationWrapper.html(infoText);
+                    }
+
+                } else {
+
+                    informationWrapper.hide();
+                }
+
+                return options;
+            }
+
+            function getStyles () {
+
+                var styles = $.extend(true, {}, setting.style);
+
+                if (styles.layout.area.color === "Not Specified") {
+
+                    styles.layout.area.opacity = 0;
+
+                } else {
+
+                    styles.layout.area.opacity = 1;
+                }
+
+                if (styles.group.line.color === "Not Specified") {
+
+                    styles.group.line.opacity = 0;
+
+                } else {
+
+                    styles.group.line.opacity = 1;
+                }
+
+                if (styles.label.area.color === "Not Specified") {
+
+                    styles.label.area.opacity = 0;
+
+                } else {
+
+                    styles.label.area.opacity = 1;
+                }
+
+                styles.item.hover.line.width = Number(setting.style.item.line.width) + 1;
+
+                return styles;
+            }
+
+            function dataCheck (options) {
+
+                var check = true;
+
+                var data = options.data.data;
+
+                for (var i = 0; i < data.length; i++) {
+
+                    var use = data[i][options.data.use].replace(/[^\d]+/g, '');
+                    var flag = data[i][options.data.flag].replace(/[^\d]+/g, '');
+
+                    if (isNaN(use)) {
+
+                        check = false;
+
+                        alert('아이템 크기의 데이터가 올바르지 않습니다.');
+
+                        break;
+                    }
+
+                    if (isNaN(flag)) {
+
+                        check = false;
+
+                        alert('아이템 색상 값의 데이터가 올바르지 않습니다.');
+
+                        break;
+
+                    } else {
+
+                        if (flag > 20) {
+
+                            check = false;
+
+                            alert('아이템 색상 값의 범위가 너무 큽니다.');
+
+                            break;
+                        }
+                    }
+                }
+
+                return check;
+            }
+
+            var options = getOptions();
+            var styles = getStyles();
+
+            var wrapper = $('.component-treemap-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            var checkData = dataCheck(options);
+
+            if (!checkData) {
+
+                return;
+            }
+
+            wrapper.treemap = webponent.visual.treemap.init(wrapper, styles, options);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initTreeMap();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initTreeMap();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * KoreaMap 컴퍼넌트
+     */
+    self.koreamapComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+
+        var settingData = null;
+
+        // Number 1,000
+        function format_num1 (value) {
+
+            if (value === 0) {
+                return 0;
+            }
+
+            var reg = /(^[+-]?\d+)(\d{3})/;
+            var n = (value + '');
+
+            while (reg.test(n)) {
+                n = n.replace(reg, '$1' + ',' + '$2');
+            }
+
+            return n;
+        }
+
+        function initKoreaMap () {
+            function getOptions () {
+
+                var options = $.extend(true, {}, setting.option);
+
+                var formatValue = null;
+
+                if (setting.option.colorStep.use) {
+
+                    formatValue = setting.option.colorStep.value.split(",");
+
+                    var formatValueArr = [];
+
+                    for (var i = 0; i < formatValue.length; i++) {
+
+                        formatValue[i] = formatValue[i].replace(/(^\s*)|(\s*$)/gi, "");
+
+                        formatValueArr.push(formatValue[i]);
+                    }
+
+                } else {
+
+                    formatValue = null;
+                }
+
+                options.data.data = settingData;
+
+                options.local = {
+                    step : formatValue
+                };
+
+                var setTooltipFormat = {
+
+                    percent: function (data, tipElement) {
+
+                        var dataTotalValue = data.dataTotal;
+                        var value = data[setting.option.data.use];
+                        var average = Math.round(100 / dataTotalValue * value);
+                        var span = '<span>' + average + '%</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    data: function (data, tipElement) {
+
+                        var value = data[setting.option.data.use];
+                        var span = '<span>' + format_num1(value) + '</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    local_data: function (data, tipElement) {
+
+                        var value = data[setting.option.data.use];
+                        var local = data[setting.option.data.localOption];
+                        var span = '<span>' + local + ' : ' + format_num1(value) + '</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    local_percent: function (data, tipElement) {
+
+                        var dataTotalValue = data.dataTotal;
+                        var value = data[setting.option.data.use];
+                        var average = Math.round(100 / dataTotalValue * value);
+                        var local = data[setting.option.data.localOption];
+                        var span = '<span>' + local + ' : ' + average + '%</span>';
+
+                        tipElement.html(span);
+                    },
+
+                    local_data_percent: function (data, tipElement) {
+
+                        var dataTotalValue = data.dataTotal;
+                        var value = data[setting.option.data.use];
+                        var average = Math.round(100 / dataTotalValue * value);
+                        var local = data[setting.option.data.localOption];
+                        var span = '<span>' + local + ' : ' + format_num1(value) + ' (' + average + '%)</span>';
+
+                        tipElement.html(span);
+                    }
+                };
+
+                options.toolTip = {
+                    use : {
+                        local : setting.option.toolTip.use
+                    },
+                    func : function (data, tipElement) {
+
+                        var key = setting.option.toolTip.func;
+
+                        if (!data[setting.option.data.localOption]) {
+
+                            tipElement.hide();
+                        }
+
+                        setTooltipFormat[key](data, tipElement);
+                    },
+                    position : {
+                        x : setting.option.toolTip.position.x,
+                        y : setting.option.toolTip.position.y
+                    }
+                };
+
+                return options;
+            }
+
+            function getStyles () {
+
+                var styles = $.extend(true, {}, setting.style);
+
+                if (styles.layout.area.color === "Not Specified") {
+
+                    styles.layout.area.opacity = 0;
+
+                } else {
+
+                    styles.layout.area.opacity = 1;
+                }
+
+                var koreaAreaColor = [];
+                var colorStepLength = 7;
+
+                if (setting.option.colorStep.use) {
+
+                    var formatValue = setting.option.colorStep.value.split(",");
+
+                    colorStepLength = formatValue.length;
+                }
+
+                for (var i = 0; i < colorStepLength; i++) {
+
+                    koreaAreaColor.push(styles.korea.area.color[i]);
+                }
+
+                styles.korea.area.color = koreaAreaColor;
+
+                var sea = setting.style.sea;
+
+                styles.sea = {
+                    east : {
+                        text : {
+                            value : sea.label.east,
+                            family : sea.text.family,
+                            size : sea.text.size,
+                            color : sea.text.color,
+                            weight : sea.text.weight
+                        }
+                    },
+                    west : {
+                        text : {
+                            value : sea.label.west,
+                            family : sea.text.family,
+                            size : sea.text.size,
+                            color : sea.text.color,
+                            weight : sea.text.weight
+                        }
+                    },
+                    south : {
+                        text : {
+                            value : sea.label.south,
+                            family : sea.text.family,
+                            size : sea.text.size,
+                            color : sea.text.color,
+                            weight : sea.text.weight
+                        }
+                    }
+                };
+
+                return styles;
+            }
+
+            var options = getOptions();
+            var styles = getStyles();
+
+            var wrapper = $('.component-koreamap-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.korea = webponent.visual.korea.init(wrapper, styles, options);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initKoreaMap();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initKoreaMap();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Cylinder 컴퍼넌트
+     */
+    self.cylinderComponentScript = function(markup, setting){
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function getOptions () {
+            var options = $.extend(true, {}, setting.option);
+            options.data.data = settingData;
+            return options;
+
+        }
+        function setStyles () {
+            if (setting.style.layout.area.color === "Not Specified") {
+
+                setting.style.layout.area.opacity = 0;
+
+            } else {
+
+                setting.style.layout.area.opacity = 1;
+            }
+        }
+
+        function initCylinder () {
+
+            var options = getOptions();
+
+            setStyles();
+
+            var wrapper = $('.component-cylinder-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.cylinder = webponent.visual.shaped.init(wrapper, setting.style, options, 'cylinder');
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initCylinder();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initCylinder();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Thermometer 컴퍼넌트
+     */
+    self.thermometerComponentScript = function(markup, setting){
+
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function getOptions () {
+            var options = $.extend(true, {}, setting.option);
+            options.data.data = settingData;
+            return options;
+
+        }
+        function setStyles () {
+            if (setting.style.layout.area.color === "Not Specified") {
+
+                setting.style.layout.area.opacity = 0;
+
+            } else {
+
+                setting.style.layout.area.opacity = 1;
+            }
+        }
+
+        function initThermometer() {
+
+            var options = getOptions();
+
+            setStyles();
+
+            var wrapper = $('.component-thermometer-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.thermometer = webponent.visual.shaped.init(wrapper, setting.style, options, 'thermometer');
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+            initThermometer();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initThermometer();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Angular 컴퍼넌트
+     */
+    self.angularComponentScript = function(markup, setting){
+
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function getOptions () {
+            var options = $.extend(true, {}, setting.option);
+            options.data.data = settingData;
+            return options;
+
+        }
+        function setStyles () {
+            if (setting.style.layout.area.color === "Not Specified") {
+
+                setting.style.layout.area.opacity = 0;
+
+            } else {
+
+                setting.style.layout.area.opacity = 1;
+            }
+        }
+
+        function initAngular() {
+
+            var options = getOptions();
+
+            setStyles();
+
+            var wrapper = $('.component-angular-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.angular = webponent.visual.angular.init(wrapper, setting.style, options, setting.gaugeType);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initAngular();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initAngular();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * Linear gauge 컴퍼넌트
+     */
+    self.linearComponentScript = function(markup, setting){
+
+        var componentId = markup.attr('data-componentId');
+        var settingData = null;
+
+        function getOptions () {
+            var options = $.extend(true, {}, setting.option);
+            options.data.data = settingData;
+            return options;
+
+        }
+
+        function setStyles () {
+            if (setting.style.layout.area.color === "Not Specified") {
+
+                setting.style.layout.area.opacity = 0;
+
+            } else {
+
+                setting.style.layout.area.opacity = 1;
+            }
+        }
+
+        function initLinear() {
+
+            var options = getOptions();
+
+            setStyles();
+
+            var wrapper = $('.component-linear-wrapper', markup);
+
+            wrapper.css("width", setting.style.wrapper.width);
+            wrapper.css("height", setting.style.wrapper.height);
+
+            wrapper.children().remove();
+
+            wrapper.linear = webponent.visual.linear.init(wrapper, setting.style, options, setting.gaugeType);
+        }
+
+        if (!setting.data) {
+
+            settingData = setting.sampleData;
+
+            initLinear();
+
+        } else {
+
+            webponent.press.runtime.getComponentData(setting.data, function (data) {
+
+                settingData = data;
+
+                initLinear();
+
+            }, null, componentId);
+        }
+    };
+
+    /**
+     * 범례 컴퍼넌트
+     */
+    self.legendComponentScript = function(markup, setting){
+
+    };
+
+    /**
+     * SNS 공유하기 버튼 컴퍼넌트
+     */
+    self.share_btnComponentScript = function(markup, setting) {
+
+        function kakaoEvent (url, title) {
+
+            if (Kakao.Auth === undefined) {
+                Kakao.init(setting.option.kakao.appKey);
+            }
+            Kakao.Link.sendTalkLink({
+                label: title,
+                image: {
+                    src: setting.option.kakao.image,
+                    width: "380px",
+                    height: "280px"
+                },
+                webLink: {
+                    text: '바로가기',
+                    url: url
+                }
+            });
+        }
+
+        if (setting.option.snsType == "kakao") {
+            var url = markup.find('a').attr('data-url');
+            var title = markup.find('a').attr('data-title');
+
+            markup.find('a').off('click').on('click', function(e){
+                kakaoEvent(url,title);
+            });
+
+        }else{
+            return false;
+        }
+
+    };
+
+    /**
+     * 캘린더 컴퍼넌트
+     */
+    self.calendarComponentScript = function(markup, setting) {
+
+        markup.find('.date-picker').attr('id', '').removeClass('hasDatepicker').datepicker({
+            dateFormat: 'yy-mm-dd'
+        });
+
+        var value1 = setting.value1;
+        var value2 = setting.value2;
+
+        var $input1 = markup.find('.calendar-input1').attr('name', setting.name1);
+        var $input2 = markup.find('.calendar-input2').attr('name', setting.name2);
+
+        var today = new Date();
+
+        if (!value1 || value1 === '{{today}}') {
+            $input1.datepicker('setDate', today);
+        } else if (value1 === '{{y1}}') {
+
+            var _today = new Date();
+            _today.setYear(_today.getFullYear() - 1);
+
+            $input1.datepicker('setDate', _today);
+        } else if (value1 === '{{m1}}') {
+
+            var _today = new Date();
+            _today.setMonth(_today.getMonth() - 1);
+
+            $input1.datepicker('setDate', _today);
+        } else {
+            $input1.val(value1);
+        }
+
+        if (!value2 || value2 === '{{today}}') {
+            $input2.datepicker('setDate', today);
+        } else if (value2 === '{{y1}}') {
+
+            var _today = new Date();
+            _today.setYear(_today.getFullYear() - 1);
+
+            $input2.datepicker('setDate', _today);
+        } else if (value2 === '{{m1}}') {
+
+            var _today = new Date();
+            _today.setMonth(_today.getMonth() - 1);
+
+            $input2.datepicker('setDate', _today);
+        } else {
+            $input2.val(value2);
+        }
+
+        markup.find('.calendar-label1').text(setting.label1);
+        markup.find('.calendar-label2').text(setting.label2);
+
+
+        markup.find('.calendar-this-year').off('click').on('click', function () {
+            var _today = new Date();
+            $input2.datepicker('setDate', _today);
+            _today.setDate(1);
+            _today.setMonth(0);
+            $input1.datepicker('setDate', _today);
+        });
+
+        markup.find('.calendar-this-month').off('click').on('click', function () {
+            var _today = new Date();
+            $input2.datepicker('setDate', _today);
+            _today.setDate(1);
+            $input1.datepicker('setDate', _today);
+        });
+
+        markup.find('.calendar-today').off('click').on('click', function () {
+            var _today = new Date();
+            $input2.datepicker('setDate', _today);
+            $input1.datepicker('setDate', _today);
+        });
+
+    };
+
+    self.setThemes = function(componentThemeList,textTheme,setting, component){
+
+        textTheme.children().remove();
+
+        var componentName = 'outline';
+        try {
+            componentName = setting.settingName;
+        }catch(e){}
+
+        _.each(componentThemeList, function (value) {
+            var option = null;
+
+            if(typeof value.filter !=='undefined') {
+                if(value.filter.indexOf(componentName)>=0) {
+                    option = "<option value=" + value.value + ">" + value.text + "</option>";
+                }
+            }else {
+                option = "<option value=" + value.value + ">" + value.text + "</option>";
+            }
+
+
+
+            textTheme.append(option);
+            if(typeof component !=='undefined') {
+                if(component.hasClass(value.value)) {
+                    textTheme.find('option[value="' + value.value + '"]').attr("selected", "selected");
+                    return;
+                }
+            }
+        });
+    };
+
+
+    if (!window.webponent){
+        window.webponent = {};
+    }
+
+    if (!window.webponent.press) {
+        window.webponent.press = {};
+    }
+
+    if (!window.webponent.press.event) {
+
+        window.webponent.press.event = $({});
+    }
+
+    window.webponent.press.component = self;
+
+})(jQuery);
+
+(function($) {
+    if(!window.RespText) {
+        window.RespText = {};
+    }
+
+    var self = window.RespText;
+
+    var RESP_ELEM_CLASS = 'respText';
+    var RESP_SELECTOR = '.' + RESP_ELEM_CLASS;
+    var DEFAULT_FONT_SIZE = 14;
+
+    function adjustFont(element) {
+        if (element.length) {
+            element = element[0];
+        }
+
+        var $elem = $(element);
+
+        var curWidth = $elem.width();
+        var stdWidth = parseInt($(element).attr('data-std_width'));
+        var stdFontSize = parseInt($(element).attr('data-std_font_size'));
+        var ratio = curWidth / stdWidth;
+        var curFont = stdFontSize * ratio;
+
+        $elem.css({
+            fontSize: curFont + 'px'
+        });
+    }
+
+    function adjustTableLayout() {
+        var table = webponent.press.runtime.getPageMarkup().find('.wpc-table');
+        table.each(function(){
+            webponent.press.runtime.runComponent($(this), false);
+        });
+    }
+
+    function init() {
+        $(document).ready(function() {
+            var $body = $('.wp-content');
+            var thisWidth = $body.width();
+
+            $body.removeClass('wp-desktop wp-tablet wp-mobile');
+            if(thisWidth > 768){
+                $body.addClass('wp-desktop')
+            }else if(thisWidth < 769 && thisWidth > 416){
+                $body.addClass('wp-tablet')
+            }else{
+                $body.addClass('wp-mobile')
+            }
+
+            $(window).on('resize', function() {
+
+                var pageMarkup = $('.wp-content');//webponent.press.runtime.getPageMarkup();
+                var thisWidth = pageMarkup.width();
+
+                pageMarkup.removeClass('wp-desktop wp-tablet wp-mobile');
+                if(thisWidth > 768){
+                    pageMarkup.addClass('wp-desktop')
+                }else if(thisWidth < 769 && thisWidth > 416){
+                    pageMarkup.addClass('wp-tablet')
+                }else{
+                    pageMarkup.addClass('wp-mobile')
+                }
+/*
+                if(pageMarkup.find('.wpc-table').length > -1){
+                    adjustTableLayout();
+                }*/
+
+                var table = $('.wp-content').find('.wpc-table');
+                if(table.length > -1) {
+                    table.each(function () {
+                        webponent.press.runtime.runComponent($(this), false);
+                    })
+                }
+
+                if(pageMarkup.find('.wpc-resp-tab').length > -1){
+                    if($('.resp-tab-list').css('display') !== 'none' && $('.resp-heading.tab-active').length === 0 ){
+                        var idx = $('.resp-tab-item.tab-active').index();
+                        $('.resp-tab-panel').eq(idx).show();
+                    }
+                }
+
+                $(RESP_SELECTOR).trigger('response.resize');
+            });
+
+
+            $(document).on('response.resize', RESP_SELECTOR, function() {
+                adjustFont(this);
+            });
+        });
+    }
+
+    function changeUnit(src, dest) {
+        function change(elem, base) {
+            if (!$(elem).hasClass('wpc-text')) {
+                elem = elem.length ? elem[0] : elem;
+
+                var fontSize = elem.style.fontSize;
+                if ('' !== fontSize) {
+                    var parent = $(elem).parent();
+                    var pFontSize = parseFloat(parent.css('fontSize'));
+
+                    var result;
+                    if (src === 'px') {
+                        var intSize = parseInt(fontSize);
+                        if (pFontSize !== base) {
+                            result = intSize / pFontSize;
+                        } else {
+                            result = intSize / base;
+                        }
+
+                    } else {
+                        var floatSize = parseFloat(fontSize);
+                        if (pFontSize !== base) {
+                            result = Math.round(floatSize * pFontSize);
+                        } else {
+                            result = Math.round(floatSize * base);
+                        }
+                    }
+
+                    $(elem).css('fontSize', result + dest);
+                }
+            }
+
+            _.each($(elem).children(), function(attr, idx) {
+                change(attr, base);
+            })
+        }
+
+        return change;
+    }
+
+    if (webponent.press.interaction) {
+        self.init = function(element) {
+            if(!element) {
+                return;
+            }
+
+            if(element.length) {
+                element = element[0];
+            }
+
+            var $element = $(element);
+
+            $element.addClass(RESP_ELEM_CLASS);
+
+            var stdFontSize = parseInt($element.css('font-size'));
+            stdFontSize = _.isNaN(stdFontSize) ? DEFAULT_FONT_SIZE : stdFontSize;
+
+            $element.attr('data-std_font_size', stdFontSize);
+            $element.attr('data-std_width', $element.width());
+
+            self.changePxToEm($element, stdFontSize);
+
+            return element
+        };
+
+        self.setBaseFontSize = function(element, size) {
+            if (!element) {
+                return false;
+            }
+
+            var $element = $(element);
+
+            $element.attr('data-std_font_size', size);
+        };
+
+        self.destroy = function(element) {
+            if(!element) {
+                return;
+            }
+
+            if(element.length) {
+                element = element[0];
+            }
+
+            var $element = $(element);
+            $element.css({
+                fontSize: ''
+            });
+
+            var baseFontSize = $element.attr('data-std_font_size');
+
+            self.changeEmToPx($element, baseFontSize);
+
+            $element.removeClass(RESP_ELEM_CLASS);
+            $element.removeAttr('data-std_font_size');
+            $element.removeAttr('data-std_width');
+
+            $element.off('response.resize');
+        }
+    }
+
+    self.isResponsive = function(element) {
+        if (!element) {
+            return false;
+        }
+
+        var $element = $(element);
+
+        if ($element.hasClass(RESP_ELEM_CLASS)) {
+            return true;
+        }
+
+        return false;
+    };
+
+    self.adjustSize = function(element) {
+        adjustFont(element);
+    };
+
+    self.changePxToEm = changeUnit('px', 'em');
+
+    self.changeEmToPx = changeUnit('em', 'px');
+
+    init();
+})(jQuery);
+
+

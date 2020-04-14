@@ -1,0 +1,1431 @@
+@charset "utf-8";
+/*****************************************************************
+  Font
+*****************************************************************/
+@font-face{
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:100;
+	src:local('Noto Sans Thin'), local('NotoSans-Thin');
+	src:url(../external/fonts/NotoSans-Thin.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-Thin.woff) format('woff'),
+		url(../external/fonts/NotoSans-Thin.otf) format('opentype');
+}
+@font-face{
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:300;
+	src:local('Noto Sans Light'), local('NotoSans-Light');
+	src:url(../external/fonts/NotoSans-Light.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-Light.woff) format('woff'),
+		url(../external/fonts/NotoSans-Light.otf) format('truetype');
+}
+@font-face{
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:350;
+	src:local('Noto Sans DemiLight'), local('NotoSans-DemiLight');
+	src:url(../external/fonts/NotoSans-DemiLight.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-DemiLight.woff) format('woff'),
+		url(../external/fonts/NotoSans-DemiLight.otf) format('opentype');
+}
+@font-face{
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:400;
+	src:local('Noto Sans Regular'), local('NotoSans-Regular');
+	src:url(../external/fonts/NotoSans-Regular.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-Regular.woff2) format('woff'),
+		url(../external/fonts/NotoSans-Regular.otf) format('truetype');
+}
+@font-face{
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:500;
+	src:local('Noto Sans Medium'), local('NotoSans-Medium');
+	src:url(../external/fonts/NotoSans-Medium.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-Medium.woff) format('woff'),
+		url(../external/fonts/NotoSans-Medium.otf) format('truetype');
+}
+@font-face{
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:700;
+	src:local('Noto Sans Bold'), local('NotoSans-Bold');
+	src:url(../external/fonts/NotoSans-Bold.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-Bold.woff) format('woff'),
+		url(../external/fonts/NotoSans-Bold.otf) format('truetype');
+}
+@font-face {
+	font-family:'Noto Sans';
+	font-style:normal;
+	font-weight:900;
+	src:local('Noto Sans Black'), local('Noto Sans Black'), local('Noto Sans Black');
+	src:url(../external/fonts/NotoSans-Black.woff2) format('woff2'),
+		url(../external/fonts/NotoSans-Black.woff) format('woff'),
+		url(../external/fonts/NotoSans-Black.otf) format('truetype');
+}
+@font-face {  
+	font-family: 'Roboto1';  
+	font-style: normal;  
+	font-weight: 100;
+	src: url(../external/fonts/Roboto-Thin.woff2) format('woff2'),
+		 url(../external/fonts/Roboto-Thin.woff) format('woff'),
+		 url(../external/fonts/Roboto-Thin.otf) format('opentype');
+}
+@font-face {  
+	font-family: 'Roboto2'; 
+	font-style: normal;  
+	font-weight: 300;
+	src: url(../external/fonts/Roboto-Light.woff2) format('woff2'),
+		 url(../external/fonts/Roboto-Light.woff) format('woff'),
+		 url(../external/fonts/Roboto-Light.otf) format('opentype');
+}
+@font-face {   
+	font-family: 'Roboto3';   
+	font-style: normal;   
+	font-weight: 400;
+	src: url(../external/fonts/Roboto-Regular.woff2) format('woff2'),
+		 url(../external/fonts/Roboto-Regular.woff) format('woff'),
+		 url(../external/fonts/Roboto-Regular.otf) format('opentype'); 
+}
+@font-face {   
+	font-family: 'Roboto4';   
+	font-style: normal;   
+	font-weight: 500;
+	src: url(../external/fonts/Roboto-Medium.woff2) format('woff2'),
+		 url(../external/fonts/Roboto-Medium.woff) format('woff'),
+		 url(../external/fonts/Roboto-Medium.otf) format('opentype'); 
+}
+@font-face {   
+	font-family: 'Roboto5';   
+	font-style: normal;   
+	font-weight: 700;
+	src: url(../external/fonts/Roboto-Bold.woff2) format('woff2'),
+		 url(../external/fonts/Roboto-Bold.woff) format('woff'),
+		 url(../external/fonts/Roboto-Bold.otf) format('opentype'); 
+}
+
+.wp-content {
+/* 	width: 700px; */
+	min-height: 100%;
+	font-size: 14px;
+	line-height: 1.42857143;
+	color: #333;
+	font-family:'Noto Sans','Malgun Gothic',Dotum,Helvetica,'Apple SD Gothic Neo',Sans-serif;
+	background: #fff;
+	margin: 0 auto;
+	box-shadow: none;
+	overflow: visible;
+}
+
+.wp-content:before,
+.wp-content:after {
+	content: "";
+	display: block;
+	height: 0;
+	overflow: hidden;
+}
+
+.press-preview .wp-content {
+	box-shadow: 0 0 15px 0 rgba(150, 150, 150, 0.5);
+	margin-bottom: 15px;
+}
+
+
+.wpc-text p {font-size: 15px;}
+.wpc-text h1{font-size: 2.6em;/*36px;*/}
+.wpc-text h2{font-size: 2em;/*30px;*/}
+.wpc-text h3{font-size: 1.7em;/*24px;*/}
+.wpc-text h4{font-size: 1.3em;/*18px*/}
+
+.wp-mobile p.wpc-text {line-height:1.5;}
+
+.wp-content :not(.wpc-coding) h1,
+.wp-content :not(.wpc-coding) h2,
+.wp-content :not(.wpc-coding) h3, 
+.wp-content :not(.wpc-coding) h4, 
+.wp-content :not(.wpc-coding) h5, 
+.wp-content :not(.wpc-coding) h6 {
+	/*	margin-top: 0;
+        margin-bottom: 0;*/
+	font-family: inherit;
+	font-weight: 500;
+	line-height: 1.1;
+	color: inherit;
+}
+.wp-content label {
+	margin: 0;
+	font-weight: normal;
+}
+.wp-content img {
+	vertical-align: middle;
+/* 	max-width: 100%; */
+}
+
+.tab-selector::-webkit-scrollbar{
+	display:none;
+}
+
+/* 레이아웃 컴퍼넌트 공통 */
+.wpc-layout:after {
+	visibility: hidden;
+	display: block;
+	font-size: 0;
+	content: " ";
+	clear: both;
+	height: 0;
+}
+.wp-section {
+	float : left;
+/* 	padding: 10px; */
+	min-height: 22px;
+}
+
+.press-form-section{
+	min-height:22px;
+	padding:10px;
+}
+
+.wpc-bxslider.wp-p-0,
+.wp-section.wp-p-0,
+.press-form-section.wp-p-0 {
+	padding: 0;
+}
+
+/* 테이블 컴퍼넌트 */
+.wpc-table table {
+	width: 100%;
+	font-size: 12px;
+}
+.wpc-table-wrap {
+	position: relative;
+	width: 100%;
+	margin: 50px auto;
+}
+.press-table-comp {
+	width: 100%;
+	position: relative;
+}
+.press-table-comp th, .press-table-comp td {
+	vertical-align: middle;
+	border: 1px solid #ced7e6;
+	padding: 3px;
+	word-break: break-all;
+}
+.press-table-comp th {
+	background: #EDEDEF;
+	font-weight: bold;
+	text-align:center;
+}
+.hwp-converter-table th,.hwp-converter-table td{
+	background: none;
+	font-weight: normal;
+	border: none;
+}
+.press-table-comp th p, .press-table-comp td p {
+	margin: 0;
+	word-break: break-word;
+}
+.press-table-comp tr {
+	height: 26px;
+}
+.unselectable {
+	-webkit-user-select: none; /* SAFARI, CHROME */
+	-khtml-user-select: none; /* KONQUEROR */
+	-moz-user-select: none; /* FIREFOX */
+	-ms-user-select: none; /* IE */
+	user-select: none; /* CSS3 */
+}
+.wpc-table-vresizer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1px;
+	height: 100%;
+	background: transparent;
+}
+.wpc-table-vresizer:hover,
+.wpc-table-vresizer:active,
+.wpc-table-vresizer.active {
+	cursor: col-resize;
+}
+.wpc-table-hresizer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 1px;
+	background: transparent;
+}
+.wpc-table-hresizer:hover,
+.wpc-table-hresizer:active,
+.wpc-table-hresizer.active {
+	cursor: row-resize;
+}
+.wpc-table-celler {
+	position: absolute;
+	border: 5px solid #aaa;
+	display: none;
+}
+.wpc-table-menu {
+	position: absolute;
+	display: none;
+	border: 1px solid black;
+	background: #fff;
+	padding: 5px;
+}
+.wpc-table-menu ul {
+	margin-bottom: 0;
+}
+.table-context {
+	position: absolute;
+	display: none;
+	border: 1px solid #666;
+	background: #fff;
+	padding: 0;
+	font-size: 12px;
+	z-index: 1000;
+	font-size: 0;
+	line-height: 0;
+	word-spacing: 0;
+}
+.table-context ul {
+	margin-bottom: 0;
+	font-size: 0;
+	line-height: 0;
+	letter-spacing:-.25em;
+	word-spacing:-.25em;
+}
+.table-context ul li {
+	display: block;
+	border-bottom: 1px solid #eee;
+	font-size: 0;
+	line-height: 0;
+	letter-spacing:-.25em;
+	word-spacing:-.25em;
+}
+.table-context a {
+	width: 60px;
+	display: inline-block;
+	padding: 5px;
+	font-size: 12px;
+	line-height: 160%;
+}
+.table-context a:hover, .table-context a:focus {
+	background: #eee;
+}
+.press-table-comp th.sel,
+.press-table-comp td.sel {
+	background: #A6A5DA !important;
+	opacity: 0.3;
+}
+.press-table-comp .sel .table-content {
+	background: #000000 !important;
+	opacity: 0.3;
+}
+.press-table-comp span.title {
+	font-weight: bold;
+}
+.press-table-maker {
+	position: absolute;
+	display: inline-block;
+	width: auto;
+	margin: 0 10px;
+	padding: 6px 0;
+	background: #fff;
+	border: 1px solid #eee;
+}
+.press-table-maker .picker {
+	box-sizing: content-box;
+	padding: 4px;
+	font-size: 18px;
+}
+.press-table-maker .mouse {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 20em;
+	height: 20em;
+}
+.press-table-maker .unhighlight {
+	position: relative;
+	min-width: 5em;
+	min-height: 5em;
+	overflow: hidden;
+}
+.press-table-maker .highlight {
+	position: absolute;
+	top: 0;
+	left: 0;
+	overflow: hidden;
+}
+.press-table-maker .cellstatus {
+	text-align: center;
+	font-size: 11px;
+}
+
+.press-table-dragger {
+	background-color: rgba(0,0,0,0.5);
+	position: absolute;
+	cursor: col-resize;
+	height: 100%;
+	width: 7px;
+	z-index: 13;
+}
+
+.press-table-guider {
+	position: absolute;
+	background: #68e;
+	height: 100%;
+	width: 1px;
+}
+
+/* 이미지 */
+.wp-tal{text-align: left;}
+.wp-tac{text-align: center;}
+.wp-tar{text-align: right;}
+
+
+/* 비디오 */
+
+.wpc-video.wp-tar{overflow:hidden;}
+.wpc-video.wp-tar > div {float:right;}
+
+.wpc-video.resizable,
+.wpc-video.resizable .wpc-video,
+.wpc-video.resizable .press-video-comp {
+	width: 100% !important;
+	padding: 0 !important;
+}
+
+.press-video-ifrm {
+	pointer-events: none;
+}
+
+/*
+.press-video-ifrm {
+	pointer-events: none;
+	position: relative;
+	padding-bottom: 56.25%;
+	padding-top: 25px;
+	height: 0;
+}
+
+
+.press-video-ifrm iframe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+*/
+
+.deployed .press-video-ifrm {
+	pointer-events: inherit;
+}
+
+.wpc-video.wp-tac .press-video-comp,
+.wpc-video.wp-tac .press-video-ifrm {
+	margin: 0 auto;
+}
+.wpc-video.wp-tar .press-video-ifrm {
+	margin: 0 0 0 auto;
+}
+.wpc-videop .video-wrapper {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(255,255,255,0.7);
+	min-height: 100%;
+	text-align: center;
+	z-index: 2;
+}
+.wpc-video .wpc-video-videoBox,
+.wpc-videop .wpc-videop-imageBox {
+	position: relative;
+	z-index: 2;
+}
+.wpc-videop .video-wrapper:before {
+	content: '';
+	display: inline-block;
+	vertical-align: middle;
+	height: 100%;
+}
+.wpc-videop .video-wrapper .video-container {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.press-coding-component {
+	font-size: 16px;
+	line-height: 28px;
+	color: #000;
+}
+
+
+/* 버튼 */
+.wpc-button {
+	text-align: center;
+}
+
+.wpc-button> a {
+	position: relative;
+	overflow: hidden;
+}
+
+.press-button {
+	text-align: center;
+	padding: 5px;
+	border: 1px solid #13c6b0;
+	background: #13c6b0;
+	border-radius: 2px;
+	display: inline-block;
+	color: #ffffff;
+	font-size: 12px;
+}
+
+
+
+/* 레이아웃 탭 */
+.wpc-tab {
+	font-size: 14px;
+	overflow: hidden;
+}
+.wpc-tab .tab-panel {
+	margin-bottom: 0;
+}
+
+.wpc-tab .tab-panel > li > .wp-section{
+	border-width: 0;
+}
+
+/*min-height제거*/
+/*.wpc-tab .tab-panel > li {*/
+/*min-height: 100px;*/
+/*}*/
+.wpc-tab .tab-selector {
+	margin: 0;
+	padding: 0;
+}
+.wpc-tab .tab-selector > li {
+	background: none;
+	/*border: solid 1px #ccc;*/
+	margin-left: -1px;
+}
+.wpc-tab .tab-selector li a {
+	padding: 4px 20px;
+	display: block;
+	text-decoration: none;
+	color: #666;
+}
+.wpc-tab .tab-selector li.ci-tab-active {
+	background: #ccc;
+}
+.wpc-tab .tab-selector li.ci-tab-active a {
+	color: #000;
+}
+.wpc-tab .tab-panel {
+/* 	margin-top: 4px; */
+	clear: none;
+}
+
+.wpc-tab .wp-section {
+	width: 100%;
+	min-height: 10px;
+}
+
+/* 레이아웃 리스트 */
+.wpc-list {
+	min-height: 30px;
+}
+/*
+
+.wpc-list li {
+    list-style: square inside;
+    font-size: 14px;
+}
+*/
+
+
+/*********** 폼 컴포넌트 ***********/
+.wpc-form {
+	font-size: 14px;
+}
+.wpc-form .press-calendar-component {
+	display: inline-block;
+}
+.wpc-form label {
+	display: inline-block;
+	margin: 0;
+	font-weight: normal;
+	vertical-align: middle;
+}
+.wpc-input .form-group-hidden {
+	display: none;
+	margin: 0;
+}
+/*한화 임시*/
+.wpc.hidden-component,
+tr.hidden-component {
+	display: none;
+}
+
+.wpc-input{
+	display: flex;
+}
+.wpc-input .form-group-label {
+	margin-right: 20px;
+	margin-top: -1px;
+	vertical-align: middle;
+}
+.wpc-input > .form-group-label {
+	width: 30%;
+	float: left;
+	margin: 0;
+	line-height: 25px;
+}
+.wpc-input .form-group-input {
+	display: inline-block;
+	width: 70%;
+}
+.wpc-input.none-label > .form-group-label {
+	display: none;
+}
+.wpc-input.none-label .form-group-input {
+	width: 100%;
+}
+.wpc-input select {
+	padding: 0 20px 0 10px;
+	height: 25px;
+	border: 1px solid #bbb;
+	width: 100%;
+}
+
+.wpc-input input[type="text"] {
+	height: 25px;
+	border: 1px solid #bbb;
+}
+.wpc-input input[type="radio"],
+.wpc-input input[type="checkbox"] {
+	display: inline-block;
+	margin: -1px 5px 0 0;
+	position: relative;
+	vertical-align: middle;
+}
+.wpc-input .guide {
+	float: left;
+	margin: 0;
+}
+.wpc-input .submit-button {
+	text-align: center;
+	padding: 5px;
+	border: 1px solid #13c6b0;
+	background: #13c6b0;
+	border-radius: 2px;
+	display: inline-block;
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: normal;
+	font-family: 'Nanum Gothic';
+}
+.wpc-form .divider-wrapper {
+	display: block;
+}
+.wpc-form .divider-wrapper hr {
+	margin: 0;
+	margin-bottom: 0;
+	border: 0;
+	border-top: solid 1px #eee;
+}
+.press-up-color {
+	color : #cd2214;
+}
+.press-down-color {
+	color : #1c6fb1;
+}
+.press-updown-icon-container {
+	position: relative;
+	display: inline-block;
+	width: 100%;
+}
+.press-updown-icon {
+	position: absolute;
+	left: 0;
+	top: 50%;
+	margin-top: -5px;
+}
+.wpc {
+	/*font-size: 14px;*/
+	/*	margin: 0 0 0 0; !*컴퍼넌트 margin-bottom 10px 제거함*!
+        padding: 0;
+        border: solid 0 #333;*/
+	/*overflow: hidden;*/
+}/*
+.wpc-text,
+.wpc-input {
+	!*min-height: 30px;*!
+	font-size: 14px;
+}*/
+.wpc-text span {
+	/*margin-right: 5px;
+	padding: 1px;*/
+	margin: 0;
+	padding: 0;
+}
+.wpc-text p {
+	margin: 0;
+}
+.wpc-text ul {
+	list-style-type: disc;
+	list-style-position: outside;
+	margin-left: 20px;
+}
+
+.wpc-text.placeholder {
+	color: #A5A6AF;
+}
+
+/* 트리맵 컴퍼넌트 - 기본 */
+.wpc-treemap .component-treemap-information {
+	font-size: 14px;
+	height: 30px;
+	margin: 0 10px;
+	line-height: 26px;
+}
+.wpc-treemap .component-treemap-information span {
+	padding: 0 12px;
+	letter-spacing: -1px;
+	white-space: pre;
+}
+.wpc-treemap .component-treemap-information .info-label {
+	padding-right: 5px;
+}
+.wpc-treemap .component-treemap-information .info-data {
+	padding-left: 0;
+}
+
+/* chart & visualization 컴퍼넌트 - 기본 */
+.component-koreamap-wrapper,
+.component-pie-wrapper,
+.component-scatter-wrapper,
+.component-horizon-wrapper {
+	font-size: 14px;
+}
+
+/* 그리드 컴퍼넌트 - 기본 */
+.wpc-grid .ci-grid-grouping-ul-li {
+	background-color: #F0FAFF;
+	border: none;
+}
+.wpc-grid .ci-grid-grouping-ul {
+	border: solid 1px #BAC9D7;
+}
+.wpc-grid a.ci-grid-grouping-ul-column {
+	color: #666;
+}
+
+
+/* PDF component */
+.press-layout-component-pdf-header {
+	font-size: 20px;
+}
+
+.wp-section.press-layout-component-pdf-content {
+	border-color: #545151;
+}
+
+
+/* edit view 속성 */
+.wp-mobile .mobile-hide,
+.wp-tablet .tablet-hide,
+.wp-desktop .desktop-hide {
+	display: none;
+}
+
+.wp-mobile [class*='wp-msl']{
+	width: 100%!important;
+}
+
+.wp-mobile [class*='wp-tsl'],
+.wp-tablet [class*='wp-tsl']{
+	width: 100%!important;
+}
+
+.wp-mobile [class*='wp-dsl'],
+.wp-tablet [class*='wp-dsl'],
+.wp-desktop [class*='wp-dsl']{
+	width: 100%!important;
+}
+.wp-mobile .wp-m-wrap {
+	width: auto!important;
+}
+
+.wp-mobile .mobile-none-background-image {
+	background-image: none !important;
+}
+
+.wp-mobile .wp-m-w100 {width: 100% !important;}
+.wp-mobile .wp-m-p0{padding: 0 !important;}
+.wp-mobile .wp-m-p5{padding: 5px !important;}
+.wp-mobile .wp-m-p10 {padding: 10px !important;}
+.wp-mobile .wp-m-p15 {padding: 15px !important;}
+
+.wp-mobile .accordion-tab > li {
+	width: 100% !important;
+	display : block !important;
+}
+.wp-mobile .accordion-tab >  li >  a {
+	display: block !important;
+	width: 100% !important;
+}
+.wp-mobile .accordion-tab >  li > div {
+	position : static !important;
+	top : auto !important;
+	display : block !important;
+	height: auto !important;
+	width: 100% !important;
+}
+.wp-mobile .accordion-tab{
+	height: auto !important;
+}
+
+.wp-mobile .accordion-tab .mobile-accordion{
+	display : none;
+}
+
+
+.wp-mobile  .tab-div{
+	height: auto !important;
+}
+
+.wp-mobile .tab-div > div.wp-section{
+	height: auto !important;
+}
+
+.wp-mobile  .tab-div > div > div > div{
+	height: auto !important;
+	overflow : auto;
+}
+
+/* 기본 테마 - 탭 컴퍼넌트 */
+.wpc-tab.blue-1 .tab-selector {
+	font-size: 0;
+	font-weight: bold;
+	height: inherit;
+	white-space: nowrap;
+	overflow-x: auto;
+	overflow-y: hidden;
+	border-bottom: solid 1px #C3C3C3;
+}
+.wpc-tab.blue-1 .extra-space {
+	/*position: absolute;
+	width: 100%;
+	height: 45px;
+	border-bottom: solid 1px #C3C3C3;*/
+}
+.wpc-tab.blue-1 .tab-selector li {
+	width: 133px;
+	margin: 0;
+	margin-right: 3px;
+	margin-bottom: -1px;
+	height: 45px;
+	display: inline-block;
+	float: none;
+	border: solid 1px #C3C3C3;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+
+.wpc-tab.blue-1 .tab-selector li a {
+	font-family: "Nanum Gothic","나눔고딕", "ngn", "sans-serif", "AppleGothic", "굴림", "Gulim", "Arial", "verdana", "Helvetica";
+	font-size: 15px;
+	height: 45px;
+	line-height: 38px;
+	width: 133px;
+	display: block;
+}
+
+.wpc-tab.blue-1 .tab-selector li.ci-tab-active {
+	background: #005BAA;
+	border: solid 1px #005BAA;
+}
+
+.wpc-tab.blue-1 .tab-selector li.ci-tab-active a {
+	color: #fff;
+}
+
+.wpc-tab.blue-1 .tab-panel {
+	margin-top: 0;
+	display: inline-block;
+	width: 100%;
+}
+
+.wpc-tab.blue-1 .tab-panel li {
+	width: 100%;
+}
+
+.wpc-legend {
+	font-size: 13px;
+	/*min-height: 30px;*/
+}
+
+.wpc-legend > ul {
+	margin: 0;
+	padding: 0;
+}
+
+.wpc-legend > ul > li {
+	display: inline-block;
+	padding: 0 25px 0 0;
+}
+
+.wpc-legend > ul > li > div {
+	width: 15px;
+	height: 15px;
+	margin-right: 10px;
+	margin-top: 2px;
+	background: #ccc;
+	float: left;
+}
+
+
+.wp-section {
+	border-width: 0;
+}
+
+.table-resizer {
+	display: none;
+}
+
+/* 블루 테마- 아코디언 포함 탭 컴퍼넌트 */
+.wpc-resp-tab.blue-1 .tab-selector {
+	font-size: 0;
+	font-weight: bold;
+	height: inherit;
+	border-bottom: solid 1px #C3C3C3 !important;
+}
+.wpc-resp-tab.blue-1 .tab-selector > li {
+	width: 133px;
+	border: solid 1px #C3C3C3 !important;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+
+.wpc-resp-tab.blue-1 .tab-selector > li > a {
+	font-family: "Nanum Gothic","나눔고딕", "ngn", "sans-serif", "AppleGothic", "굴림", "Gulim", "Arial", "verdana", "Helvetica";
+	font-size: 15px;
+	height: 45px;
+}
+.wpc-resp-tab.blue-1 .tab-selector > li.tab-active > a {
+	color: #fff !important;
+	background: #005BAA !important;
+	border: solid 1px #005BAA !important;
+}
+
+
+/**************************************
+
+ 한화생명 임시
+
+ **********************************/
+
+.wpc-text > h2 {
+	background : none !important;
+}
+
+
+.wpc.hidden-component {
+	display: none !important;
+}
+
+tr.hidden-component {
+	display: none !important;
+}
+
+.set-absolute {position: absolute;}
+.set-relative {position: relative;}
+
+object[data-page-setting] {
+	display: none;
+}
+
+
+.wpc-bxslider{
+	height: 100%;
+}
+
+.wpc-bxslider .wp-tac > img{
+	margin: 0 auto;
+}
+.wpc-bxslider,
+.wpc-bxslider > .wp-layout > * > .wpc-layout > .press-layout-section {
+	border-width: 0 !important;
+}
+.bx-wrapper{
+	margin: 0 auto;
+}
+
+/*아코디언*/
+.press-accordion-wrapper {
+	border-top: 2px solid #02A1E3;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-title {
+	background-color: #F6F6F6;
+}
+
+.press-accordion-wrapper .press-accordion-item.active .press-accordion-title {
+	background-color: #fff;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-title .press-accordion-toggle-btn {
+	border: none;
+	background-color: transparent;
+	width: 36px;
+	height: 36px;
+	position: absolute;
+	top: 50%;
+	right: 20px;
+	border-radius: 18px;
+	border: 1px solid #cccccc;
+	padding: 0;
+	margin-top: -18px;
+	z-index:100;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-title .press-accordion-toggle-btn > i {
+	background: url(/inc/img/common/step_box_arrow_col.png) no-repeat center 14px;
+	display: inline-block;
+	width: 100%;
+	height: 100%;
+}
+
+.press-accordion-wrapper .press-accordion-item.active .press-accordion-title .press-accordion-toggle-btn > i {
+	background: url(/inc/img/common/step_box_arrow_col.png) no-repeat center 14px;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-inner-box {
+	border-left: 1px solid #E0E0E0;
+	border-right: 1px solid #E0E0E0;
+	border-bottom: 1px solid #E0E0E0;
+	position: relative;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-inner-box.press-accordion-contents {
+	display: none;
+}
+
+.press-accordion-wrapper .press-accordion-item.active .press-accordion-inner-box.press-accordion-contents {
+	display: block;
+}
+
+.press-accordion-wrapper .press-accordion-item.active .press-accordion-inner-box {
+	border-color: #CECECE;
+}
+
+.press-accordion-wrapper .press-accordion-inner-box > .wp-section {
+	padding: 20px;
+	float: none;
+}
+
+.press-accordion-wrapper .press-accordion-inner-box.press-accordion-title > .wp-section {
+	margin-right: 75px;
+}
+
+object[data-page-setting] {
+	display: none;
+}
+
+.layerPopup {
+	display: none;
+	z-index: 2501;
+	width: 760px;
+	height: auto;
+	position: fixed;
+	left: 50%;
+	margin-left: -380px;
+	background: #fff;
+	top: 164px;
+	box-shadow: 1px 1px 5px #555;
+	transition: box-shadow 0.15s linear;
+}
+
+.layerPopup > .lp_top_line {
+	height: 8px;
+	width: 100%;
+	background: #6a3c22 url(/inc/img/commonUI/pop_line_b.png) no-repeat right;
+}
+
+.layerPopup>.layerPopup_wrap {
+	position: relative;
+	width: 698px;
+	padding: 30px;
+	border: 1px solid #444;
+	border-top: 0;
+	box-sizing: content-box;
+}
+
+.layerPopup>.layerPopup_wrap>h1 {
+	display: block;
+	border-bottom: 2px solid #222 !important;
+	width: 100%;
+	padding: 0 15px 20px 0 !important;
+	margin-bottom: 30px;
+	line-height: 24px;
+	height: auto;
+	font-size: 24px;
+	font-weight: 600;
+	color: #000;
+}
+
+.layerPopup>.layerPopup_wrap>.lp_contents {
+	width: 100%;
+	max-height: 395px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	word-break: break-all;
+}
+
+.layerPopup>.layerPopup_wrap>.lp_btnClose {
+	position: absolute;
+	top: 30px;
+	right: 30px;
+	background: url(/inc/img/commonUI/lpop_close.png) no-repeat center center;
+	width: 24px;
+	height: 23px;
+	border: 0;
+}
+
+.layerPopup.shadow_on {
+	box-shadow: 2px 2px 20px #555;
+	transition: box-shadow 0.15s linear;
+}
+
+.layerPopup.on {
+	display: block;
+}
+
+.layerPopup{max-width:740px; margin:0 auto; position:relative;}
+.layerPopup_wrap{max-width:660px;}
+
+.layerPopup.lSize{max-width:940px;}
+.layerPopup_wrap.lSize{max-width:860px;}
+
+.layerPopup.sSize{max-width:540px;}
+.layerPopup_wrap.sSize{max-width:460px;padding:30px 40px;}
+
+.display-none {
+	display: none !important;
+}
+
+/*어워즈 샘플*/
+
+.sample-awords1 {
+	position: absolute;
+	top:15px;
+	right: 15px;
+	display: none;
+}
+
+.sample-awords2 {
+	position: absolute;
+	top:45px;
+	right: 15px;
+	display: none;
+
+}
+.sample-awords3 {
+	position: absolute;
+	top:75px;
+	right: 15px;
+	display: none;
+
+}
+.sample-awords4 {
+	width: 100px;
+	height: 100px;
+	border: 1px solid black;
+	z-index: 10;
+	position: absolute;
+	top: -110px;
+	color: black;
+	font-size: 15px;
+	background-color: white;
+}
+
+/*
+	게시판 관련 :S
+*/
+
+.press-board-page {
+	display: inline-block;
+	padding-left: 0;
+	margin: 20px 0;
+	border-radius: 4px;
+}
+.press-board-page li {
+	list-style: none;
+	display: inline;
+}
+
+.press-board-page a {
+	position: relative;
+	float: left;
+	line-height: 1.42857143;
+	text-decoration: none;
+	background-color: #DDDDDD !important;
+	border: 1px solid #ddd;
+	width: 32px;
+	height: 32px;
+	text-align: center;
+	line-height: 32px;
+	margin-left: 5px;
+	color: #242a30;
+	font-size: 11px;
+}
+
+.press-board-page li.page > a {
+	background-color: #fff !important;
+}
+
+.press-board-page li.active > a,
+.press-board-page li.active > a:hover {
+	background-color: #e2e7eb !important;
+	box-shadow: inset 0 3px 5px rgba(0, 0, 0, .1);
+	color: #333;
+	border: 1px solid #e2e7eb !important;
+}
+
+.press-board-page > li:first-child > a {
+	margin-left: 0;
+}
+
+.press-board-page a.able {
+	background-color: #6dc5de !important;
+}
+
+.press-board-page .prev,
+.press-board-page .prev:hover,
+.press-board-page .prev:link {
+	background: url(../img/page/left_btn.png) no-repeat center center;
+}
+
+.press-board-page .first,
+.press-board-page .first:hover,
+.press-board-page .first:link {
+	background: url(../img/page/start_btn.png) no-repeat center center;
+}
+
+.press-board-page .next,
+.press-board-page .next:hover,
+.press-board-page .next:link {
+	background: url(../img/page/right_btn.png) no-repeat center center;
+}
+
+.press-board-page .end,
+.press-board-page .end:hover,
+.press-board-page .end:link {
+	background: url(../img/page/end_btn.png) no-repeat center center;
+}
+
+/* E : 게시판 관련 */
+
+.wpc-attach-file {
+	text-align: center;
+}
+.wpc-attach-file > a {
+	font-size: 14px;
+	line-height: 20px;
+	color: #666;
+	text-align: left;
+	display: block;
+	position: relative;
+	overflow: hidden;
+}
+
+
+/************************
+	모바일용 (데스크탑 오버라이드 하기때문에 항상 최하단에 둠)
+ ************************/
+@media (max-width: 1100px) {
+	.wp-m-wrap {
+		width: auto !important;
+	}
+}
+/*모바일*/
+@media (max-width: 768px) {
+	.deployed .wpc.mobile-hide {display: none;}
+	.deployed .wpc.tablet-hide {display: none;}
+}
+
+/*데스크탑*/
+@media (min-width: 769px) {
+	.deployed .wpc.desktop-hide {
+		display: none;
+	}
+}
+
+/*화면 사이즈별*/
+@media (max-width: 414px) {
+	.wp-msl-414 > .wp-section {	float : none;}
+	.wp-msl-414 > .wp-section {	width: 100%!important;margin: 0;}
+}
+@media (max-width: 640px) {
+	.wp-msl-640 > .wp-section { float : none;}
+	.wp-msl-640 > .wp-section {	width: 100%!important;margin: 0;}
+}
+@media (max-width: 750px) {
+	.wp-msl-750 > .wp-section {	float : none;}
+	.wp-msl-750 > .wp-section {	width: 100%!important;	margin: 0;}
+}
+
+@media (max-width: 768px) {
+	.wp-tsl-768 > .wp-section {	float : none;}
+	.wp-tsl-768 > .wp-section {	width: 100%!important;	margin: 0;}
+}
+@media (max-width: 800px) {
+	.wp-tsl-800 > .wp-section {	float : none;}
+	.wp-tsl-800 > .wp-section {	width: 100%!important;	margin: 0;}
+}
+
+@media (max-width: 1100px) {
+	.wp-dsl-1100 > .wp-section {	float : none;}
+	.wp-dsl-1100 > .wp-section {	width: 100%!important;	margin: 0;}
+}
+@media (max-width: 1024px) {
+	.wp-dsl-1024 > .wp-section {	float : none;}
+	.wp-dsl-1024 > .wp-section {	width: 100%!important;	margin: 0;}
+}
+@media (max-width: 1280px) {
+	.wp-dsl-1280 > .wp-section {	float : none;}
+	.wp-dsl-1280 > .wp-section {	width: 100%!important;	margin: 0;}
+}
+
+@media (max-width: 768px) {
+
+	.accordion-tab > li {
+		width: 100% !important;
+	}
+	.accordion-tab >  li >  a {
+		display: block !important;
+		width: 100% !important;
+	}
+	.accordion-tab >  li > div {
+		position : static !important;
+		top : auto !important;
+	}
+	.accordion-tab{
+		height: auto !important;
+	}
+	.tab-div{
+		height: auto !important;
+	}
+
+	.tab-div > div.wp-section{
+		height: auto !important;
+	}
+
+	.tab-div > div > div > div{
+		height: auto !important;
+		overflow : auto;
+	}
+
+	.mobile-accordion{
+		display : none !important;
+	}
+
+
+	.wp-m-wrap{
+		width: auto !important;
+	}
+	.mobile-none-background-image {
+		background-image: none !important;
+	}
+
+	/* 레이아웃 컴퍼넌트 공통 */
+	.wpc-layout:after {
+		visibility: hidden;
+		display: block;
+		font-size: 0;
+		content: " ";
+		clear: both;
+		height: 0;
+	}
+	.wp-msl > .wp-section {
+		float : none;
+	}
+	.wp-msl > .wp-section {
+		width: 100%!important;
+		margin: 0;
+	}
+
+	/* 이미지 */
+	.wpc-image {
+		/* 이미지 정렬이 적용 안되서 !important 제거 */
+		width: 100%;
+	}
+	.wpc-image .wp-msl {
+		width: 100% !important;
+	}
+	.press-image-component-imageBox-left {
+		float: none;
+	}
+	.press-image-component-imageBox-right {
+		float: none;
+	}
+
+	/* 비디오 */
+	.wpc-video.wp-msl,
+	.wpc-video.wp-msl .wpc-video,
+	.wpc-video.wp-msl .press-video-comp {
+		width: 100% !important;
+		padding: 0 !important;
+	}
+
+	/* 페이지 */
+	div.wp-m-w100 {width: 100% !important;}
+	div.wp-m-p0 {padding: 0 !important;}
+	div.wp-m-p5 {padding: 5px !important;}
+	div.wp-m-p10 {padding: 10px !important;}
+	div.wp-m-p15 {padding: 15px !important;}
+
+	/* 레이어 팝업 ING전용*/
+	.layerPopup{
+		width: 100% !important;
+	}
+	.layerPopup_wrap{
+		width: 100% !important;
+		margin: 0;
+		padding: 0 !important;
+	}
+	.wp-theme-homepage .lp_contents{
+		padding:30px 20px;
+	}
+	.layerWrap .popupLayer, .layer_content iframe{top: 0;}
+	.lp_header>h1{
+		font-size: 16px;
+		margin: 0;
+		padding: 10px 13px;
+	}
+	.wp-theme-homepage .ap_pop_box{
+		overflow: hidden;
+		height: 100%;
+		max-height: none;
+		padding: 0 10px;
+	}
+	.lp_header>.lp_btnClose{top: 10px;right:13px; width:23px;height:23px;}
+
+	.wp-theme-homepage.wp-mobile .ap_pop_box h3{font-size: 16px;}
+	.wp-theme-homepage .ap_pop_box + .wpc-layout{padding-left: 10px !important;padding-right: 10px !important;}
+
+	.layerPopup{margin-top:30px; margin-bottom: 30px;}
+	.layerWrap {display:none; position:absolute; z-index:900; top:0; width:100%; height:100% !important; min-height:auto;}
+	.layerWrap .popupLayer {position:absolute; left:0; top:0; z-index:910; width:100%; height:100%; min-height:100%;}
+	.layerWrap .popupLayer .back {position:fixed; left:0; top:0; z-index:920; width:100%; height:100%; min-height:100%; background:#000; -ms-filter: alpha(opacity=50); filter: alpha(opacity=50); opacity:0.5; -moz-opacity:0.5; text-indent:-999em;}
+	.wp-theme-homepage.wp-mobile .layerWrap .popupLayer .layer_content {position:fixed; left:0; top:0; z-index:920; width:100%; height:100%; min-height:100%;}
+	.layerWrap .popupLayer, .layer_content iframe {position:relative; top:100px; z-index:999; height:auto;}
+}

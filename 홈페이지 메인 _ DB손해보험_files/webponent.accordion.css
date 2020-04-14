@@ -1,0 +1,77 @@
+/*기본 아코디언 css는 webponent.press.css에 들어있음*/
+
+/*
+.press-accordion-wrapper .press-accordion-item .press-accordion-title {
+    padding:20px;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-title .press-accordion-toggle-btn {
+    border: none;
+    background-color: transparent;
+    width: 36px;
+    height: 36px;
+    position: absolute;
+    top: 50%;
+    right: 0;
+    padding: 0;
+    margin-top: -18px;
+}
+
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-title .press-accordion-toggle-btn > i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    margin-top: -3px;
+    width: 11px;
+    height: 7px;
+    overflow: hidden;
+    background: url(/Kor/mobile/common/images/common/icon_toggle.png) no-repeat 0 -14px;
+    background-size: 11px 20px;
+}
+
+.press-accordion-wrapper .press-accordion-item.active .press-accordion-title .press-accordion-toggle-btn > i {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    margin-top: -3px;
+    width: 11px;
+    height: 7px;
+    overflow: hidden;
+    background: url(/Kor/mobile/common/images/common/icon_toggle.png) no-repeat 0 0px;
+    background-size: 11px 20px;
+}
+
+.press-accordion-wrapper .press-accordion-item .press-accordion-inner-box {
+    position: relative;
+    padding: 18px 15px;
+}
+
+.press-accordion-wrapper .press-accordion-item >
+.press-accordion-inner-box.press-accordion-contents {
+    display: none;
+    padding:0;
+    min-height: 22px;
+}
+
+.press-accordion-wrapper .press-accordion-item.active >
+.press-accordion-inner-box.press-accordion-contents {
+    display: block;
+    padding: 0;
+}
+
+.press-accordion-wrapper {
+
+    border-top: 1px solid #E0E0E0;
+}
+
+.press-accordion-wrapper .press-accordion-inner-box > .press-flex-section {
+    padding: 0;
+    float: none;
+}
+
+.press-accordion-wrapper .press-accordion-inner-box.press-accordion-title > .press-flex-section {
+    margin-right: 30px;
+}
+
+*/

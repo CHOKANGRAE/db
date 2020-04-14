@@ -1,0 +1,242 @@
+/**
+ * dynamic js/javascript loader
+ * for webponent-press page
+ *
+ * @author richard.dean.kim
+ */
+(function () {
+
+    function getMeta(key, item) {
+        try {
+            var meta = document.querySelector('meta[name="' + key + '"]').content;
+            if (item != null) {
+                var stx = meta.indexOf(item + '=');
+                var etx = meta.indexOf(';', stx + 1);
+                if (etx < 0) {
+                    return meta.substring(stx + item.length + 1);
+                } else {
+                    return meta.substring(stx + item.length + 1, etx);
+                }
+            } else {
+                return meta;
+            }
+
+        } catch (e) {
+            return '';
+        }
+
+    }
+
+    /*version check*/
+//    var press_ver = getMeta('press-meta', 'version').split(',')[0].replace(/[^0-9\.]/g,"");
+    var press_ver = "2.0.0";
+
+    var jquery_lib = {
+        "1.0.0" : ['/webponent-press/external/jquery/jquery-1.11.1.min.js'],
+        "2.0.0" : ['']
+    };
+
+    var common_lib ={
+
+        "1.0.0" : [
+            '/webponent-press/external/resetcss/reset.css',
+            '/webponent-press/external/jquery/jquery-ui.css',
+            '/webponent-press/css/webponent.press.css',
+            '/webponent-press/external/font-awesome/css/font-awesome.min.css',
+            '/webponent-press/external/jquery/jquery-ui-1.10.3.custom.min.js',
+            '/webponent-press/external/underscore/underscore-min.js',
+            '/webponent-press/js/webponent.press.js',
+            '/webponent-press/external/agent/webponent.agent.js',
+            '/webponent-press/external/jsonpath/jsonpath.js'
+        ],
+
+        "2.0.0" :[
+//            '/webponent-press/external/resetcss/reset.css',
+//            '/webponent-press/external/jquery/jquery-ui.css',
+            '/webponent-press/press2.0/webponent.press.css',
+            '/webponent-press/external/font-awesome/css/font-awesome.min.css',
+//            '/pcweb/js/jquery-ui-1.12.1.min.js',
+            '/webponent-press/external/underscore/underscore-min.js',
+            '/webponent-press/press2.0/webponent.press.js',
+            '/webponent-press/external/agent/webponent.agent.js',
+            '/webponent-press/external/jsonpath/jsonpath.js',
+            '/webponent-press/external/webponent-tab/webponent.tab.css',
+            '/webponent-press/external/webponent-tab/webponent.tab.js',
+            '/webponent-press/external/webponent-accordion/webponent.accordion.js',
+            '/webponent-press/external/webponent-accordion/webponent.accordion.css'
+        ]
+    };
+
+    /* */
+    var component_lib= {
+        "chart" : [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.comm.common.js',
+            '/webponent-press/chart/webponent.chart.js'
+        ],
+        "pie" : [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.pie.js'
+        ],
+        "koreamap" : [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.korea.js'
+        ],
+        "cylinder" : [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.shaped.js'
+        ],
+        "thermometer" : [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.shaped.js'
+        ],
+        "angular" :[
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.angular.js'
+        ],
+        "linear" :[
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.linear.js'
+        ],
+        "scatter" :[
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.scatterplot.js'
+        ],
+        "horizon": [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.horizon.js'
+        ],
+        "treemap": [
+            '/webponent-press/chart/raphael.js',
+            '/webponent-press/chart/webponent.visual.treemap.js'
+        ],
+        "grid" : [
+            '/webponent-press/grid/webponent.grid.css',
+            '/webponent-press/grid/webponent.grid.flat.css',
+            '/webponent-press/grid/jquery.mousewheel.min.js',
+            '/webponent-press/grid/webponent.grid.js',
+            '/webponent-press/grid/webponent.grid.UIplugin.js'
+        ],
+        "accordion" : [
+//            '/webponent-press/external/webponent-accordion/webponent.accordion.js',
+//            '/webponent-press/external/webponent-accordion/webponent.accordion.css'
+        ],
+        "table" : [
+            '/webponent-press/external/json2html/json2table.js'
+        ],
+        "video" : [
+            '/webponent-press/external/videolightning/videoLightning.js',
+            '/webponent-press/external/mediaelement/mediaelement-and-player.js',
+            '/webponent-press/external/mediaelement/mediaelementplayer.min.css'
+        ],
+        "videop" : [
+            '/webponent-press/external/videolightning/videoLightning.js',
+            '/webponent-press/external/mediaelement/mediaelement-and-player.js',
+            '/webponent-press/external/mediaelement/mediaelementplayer.min.css'
+        ],
+        "tab" : [
+//            '/webponent-press/external/webponent-tab/webponent.tab.css',
+//            '/webponent-press/external/webponent-tab/webponent.tab.js'
+        ],
+        "bxSlider" : [
+            '/webponent-press/external/bxSlider/jquery.bxslider.css',
+            '/webponent-press/external/bxSlider/jquery.bxslider.js'
+        ]
+
+    };
+
+
+    /* version 별 상이한 스크립트 관리*/
+    var component_ver ={
+
+        "1.0.0" :{
+            "table" : [
+                '/webponent-press/js/webponent.press.table.js'
+            ],
+            "resp_tab" : [
+                '/webponent-press/external/webponent-tab/webponent.tab.css',
+                '/webponent-press/external/jindo/tab.mobile.js',
+                '/webponent-press/external/jindo/jindo.all.ns.js',
+                '/webponent-press/external/jindo/jindo_mobile_component.js'
+            ],
+            "banner" : [
+                '/webponent-press/external/bxSlider/jquery.bxslider.css',
+                '/webponent-press/external/bxSlider/jquery.bxslider.js'
+            ]
+        },
+        "2.0.0" : {
+            "table" : [
+                '/webponent-press/press2.0/webponent.press.table.js'
+            ],
+            "resp_tab" : [
+                '/webponent-press/press2.0/webponent.tab.css'
+            ]
+        }
+    };
+
+
+
+    var webElmnt = getMeta('cf:web-element').split(',') || [] ;
+
+    /* concated component lib path */
+    var component = [];
+    for(var i=0; i<webElmnt.length; i++){
+        if(component_lib[webElmnt[i]] !== undefined ){
+            component = component.concat(component_lib[webElmnt[i]])
+        }
+        if(component_ver[press_ver][webElmnt[i]] !== undefined ){
+            component = component.concat(component_ver[press_ver][webElmnt[i]]);
+        }
+    }
+
+    /* loaded jQuery check * if not matching with press version*/
+    if(typeof jQuery === 'undefined'){
+        head.load(jquery_lib[press_ver]);
+    }
+
+    head.load(common_lib[press_ver], function(){
+
+        if (+(/MSIE\s(\d+)/.exec(navigator.userAgent) || 0)[1] < 9) {
+            head.load(['/webponent-press/js/html5shiv.js','/webponent-press/js/respond.min.js', '/webponent-press/js/excanvas.min.js']);
+        }
+
+        var version = getMeta('press-meta', 'version').split(',');
+
+        if (version[0] !== webponent.press.version) {
+            //alert("문서의 버전과 현재 webPonent Press의 버전이 일치하지 않습니다. 문서 내용이 올바르지 않게 표현될 수 있습니다.");
+        }
+
+        var $head = $(document).find('head');
+        var $themeLink = $head.find('link#server-theme-css');
+        $head.find('link[href="/webponent-press/css/webponent.press.css"]').after($themeLink);
+        //$head.find('script[src="/webponent-press/press2.0/webponent.press.js"]').prop('defer',true);
+
+        if(component[0] === undefined){
+            jQuery(document).ready(function () {
+            	try{
+            		webponent.press.runtime.run();
+            	}catch(e){}
+            });
+        }else {
+            head.load(component, function () {
+                jQuery(document).ready(function () {
+                	try{
+                		webponent.press.runtime.run();
+                	}catch(e){}
+                });
+            });
+        }
+
+    });
+
+    if (!window.webponent){
+        window.webponent = {};
+    }
+
+    if (!window.webponent.press) {
+        window.webponent.press = {};
+    }
+
+    window.webponent.press.libraries = component_lib;
+
+})();
